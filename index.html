@@ -498,36 +498,52 @@ ______________________________________________________________
 
 
 
-  
-  <h2>7. The DeepONet Forward Pass: The Dot Product</h2>
+ <h2>The DeepONet Forward Pass: Learning a Nonlinear Resolvent</h2>
 
   <p>
-    The final architecture is surprisingly elegant. We pass the initial condition through the Branch to get the coefficients $b$, and the coordinates through the Trunk to get the basis functions $t$. 
+    Why does the final prediction rely on a simple dot product $u(x,y,t) = b \cdot t$? This architectural choice is deeply rooted in functional analysis. 
   </p>
   
   <p>
-    The prediction at any point in space and time is simply the dot product of these two vectors: $u(x,y,t) = b \cdot t$.
+    For linear PDEs, we can find solutions by convolving the initial condition with a global integral kernel, known as a <b>Green's Function</b> ($G$). The continuous solution looks like $u(x,t) = \int G(x,y,t) u_0(y) dy$. While the Burgers equation is strictly nonlinear (meaning no pure Green's function exists), the DeepONet mimics this process by learning a generalized, data-driven non-linear resolvent operator.
   </p>
 
-<pre><code class="language-python"><span class="k">class</span> <span class="n">DeepONet</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="n">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">branch</span><span class="p">,</span> <span class="n">trunk</span><span class="p">):</span>
-        <span class="n">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">()</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">branch</span> <span class="o">=</span> <span class="n">branch</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">trunk</span> <span class="o">=</span> <span class="n">trunk</span>
+  <p>
+    The Trunk network acts as a set of learned spectral basis functions—a bespoke coordinate system tailored to fluid shocks. The Branch network outputs the projection coefficients, determining how much of each basis function is required to construct the specific wave defined by $u_0$.
+  </p>
 
-    <span class="k">def</span> <span class="n">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
-        <span class="c"># Evaluate branch logic -> output shape: (batch_size, p)</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">branch</span><span class="p">(</span><span class="n">u0</span><span class="p">)</span> 
+  <h3>Resolving the Dimensional Mismatch</h3>
+  <p>
+    A mathematical prerequisite for the dot product is that the Branch and Trunk must output the exact same latent dimension size ($p$). However, we deliberately bottlenecked our spatial Branch to 4 dimensions to force feature invariance, while granting the Trunk 14 dimensions to express complex spatiotemporal basis functions.
+  </p>
+  
+  <p>
+    To resolve this, we utilize a linear projection matrix to expand the 4-dimensional spatial coefficients into the 14-dimensional basis space prior to the inner product:
+  </p>
+
+<pre><code class="language-python">class DeepONet(nn.Module):
+    def __init__(self, branch, trunk):
+        super().__init__()
+        self.branch = branch
+        self.trunk = trunk
+        # The crucial projection matrix mapping R^4 -> R^14
+        self.align_dims = nn.Linear(4, 14)
+
+    def forward(self, u0, coords):
+        # b shape: (batch_size, 4)
+        b_raw = self.branch(u0) 
         
-        <span class="c"># Evaluate trunk logic -> output shape: (batch_size, num_points, p)</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">trunk</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> 
+        # Project to match trunk capacity: (batch_size, 14)
+        b_aligned = self.align_dims(b_raw)
         
-        <span class="c"># Reshape b to broadcast across the num_points dimension</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="n">b</span><span class="p">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">1</span><span class="p">)</span> 
+        # t shape: (batch_size, num_points, 14)
+        t = self.trunk(coords) 
         
-        <span class="c"># The final Operator prediction is the sum over the latent dimension (dot product)</span>
-        <span class="n">pred</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">sum</span><span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">t</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="n">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="n">True</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">pred</span>
+        b_aligned = b_aligned.unsqueeze(1) 
+        
+        # Inner product across the p=14 latent space
+        pred = torch. torch.sum(b_aligned * t, dim=-1, keepdim=True)
+        return pred
 </code></pre>
 
 
