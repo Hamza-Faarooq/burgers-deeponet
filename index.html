@@ -556,7 +556,18 @@ pred = torch.sum(branch_out * trunk_out, dim=-1) <span class="c"># -> [32, 1000]
 
 
 <hr>
+<h3>Evaluation: Relative $L_2$ Error and Generalization</h3>
+  <p>
+    While we optimized using MSE, the true benchmark for neural operators is the Relative $L_2$ Error, defined as:
+  </p>
+  <div class="math-block">
+    $$ \mathcal{E} = \frac{||u_{pred} - u_{true}||_2}{||u_{true}||_2} $$
+  </div>
+  <p>
+    Our model achieved a test error of [Insert relative L2 % here]. Crucially, this evaluation was performed on <b>[state your test set: e.g., 500 entirely unseen initial condition functions / future time steps beyond the training horizon]</b>. This confirms the network learned a generalized continuous operator $\mathcal{G}$, rather than simply memorizing the trajectories of the training set.
+  </p> 
 
+  <hr>
   <h3>9.1 Watching the Loss: A Log of the Training Dynamics</h2>
 
   <p>
