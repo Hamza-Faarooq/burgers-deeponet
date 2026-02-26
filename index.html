@@ -289,14 +289,7 @@ ______________________________________________________________
   <hr>
 
   <h2>2. Data Generation: The Numerical Ground Truth</h2>
-<div class="highlight-box">
-    <b>PDE Specifications & Setup:</b><br>
-    <ul>
-      <li><b>Viscosity ($\nu$):</b> [Insert your exact value, e.g., 0.01] — <i>(Explain if this creates a mildly viscous or highly shock-dominated regime).</i></li>
-      <li><b>Spatiotemporal Domain:</b> $x, y \in [0, 1]$ and $t \in [0, T]$ with numerical steps $dx = [X]$, $dy = [Y]$, and $dt = [Z]$.</li>
-      <li><b>Boundary Conditions:</b> [Insert BC type, e.g., Homogeneous Dirichlet / Periodic], rigorously enforced during the FDM data generation phase.</li>
-    </ul>
-  </div>
+
   <p>
     Before a neural network can learn an operator, it needs a teacher. In our case, the teacher is a traditional numerical solver. We generate our ground truth data by solving the 2D viscous Burgers equation using the <b>Finite Difference Method (FDM)</b>.
   </p>
