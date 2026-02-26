@@ -2,9 +2,9 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Learning Burgers Equation with DeepONets</title>
+  <title>Learning the 1+2D Burgers Equation with DeepONets</title>
 
-  <!-- MathJax for equations -->
+  <!-- MathJax -->
   <script>
     MathJax = {
       tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
@@ -14,16 +14,16 @@
 
   <style>
     body {
-      max-width: 800px;
+      max-width: 900px;
       margin: auto;
       padding: 40px;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      line-height: 1.7;
+      line-height: 1.8;
       font-size: 18px;
       color: #111;
     }
     h1, h2, h3 {
-      margin-top: 40px;
+      margin-top: 50px;
     }
     code {
       background: #f4f4f4;
@@ -32,12 +32,16 @@
     }
     pre {
       background: #f4f4f4;
-      padding: 15px;
+      padding: 18px;
       overflow-x: auto;
+      font-size: 15px;
     }
     img {
       width: 100%;
-      margin: 20px 0;
+      margin: 25px 0;
+    }
+    hr {
+      margin: 50px 0;
     }
   </style>
 </head>
@@ -47,12 +51,14 @@
 <h1>Learning the 1+2D Burgers Equation with DeepONets</h1>
 
 <p>
-This project implements a <b>Deep Operator Network (DeepONet)</b> to learn the nonlinear solution operator
-of the 2D viscous Burgers equation.
+This project explores how neural networks can learn to solve partial differential equations (PDEs).
+Specifically, we train a <b>Deep Operator Network (DeepONet)</b> to approximate the solution operator
+of the two-dimensional viscous Burgers equation.
 </p>
 
 <p>
-Instead of solving a PDE for one initial condition, we learn the entire mapping:
+Instead of solving the PDE numerically every time we change the initial condition,
+we learn the full mapping:
 </p>
 
 <p>
@@ -62,53 +68,67 @@ $$
 </p>
 
 <p>
-Once trained, the model predicts full spatiotemporal solutions instantly for unseen initial conditions.
+After training, the model can instantly predict the full spatiotemporal evolution
+for new initial conditions.
 </p>
 
 <hr>
 
-<h2>1. The PDE</h2>
+<h2>1. What is the Burgers Equation?</h2>
 
 <p>
-We consider the 2D viscous Burgers equation:
+The 2D viscous Burgers equation is:
 </p>
 
 <p>
 $$
 \frac{\partial u}{\partial t}
 + u \cdot \nabla u
-= \nu \Delta u
+=
+\nu \Delta u
 $$
 </p>
 
-<p>where:</p>
+<p>Where:</p>
 
 <ul>
-  <li>$u(x,y,t)$ is the velocity field</li>
-  <li>$\nu$ is viscosity</li>
-  <li>$\Delta$ is the Laplacian</li>
+<li>$u(x,y,t)$ is the velocity field</li>
+<li>$\nu$ is viscosity</li>
+<li>$\nabla$ is the gradient operator</li>
+<li>$\Delta$ is the Laplacian</li>
 </ul>
 
 <p>
-This nonlinear PDE models convection–diffusion phenomena and shock formation.
+The equation models:
+</p>
+
+<ul>
+<li>Nonlinear convection</li>
+<li>Diffusion</li>
+<li>Shock formation</li>
+</ul>
+
+<p>
+It is a standard benchmark for nonlinear PDE learning.
 </p>
 
 <hr>
 
-<h2>2. Operator Learning</h2>
+<h2>2. Traditional PDE Solving vs Operator Learning</h2>
+
+<p><b>Traditional method:</b></p>
+
+<ul>
+<li>Choose one initial condition $u_0$</li>
+<li>Discretize space</li>
+<li>Step forward in time</li>
+<li>Repeat for every new $u_0$</li>
+</ul>
+
+<p><b>Operator learning:</b></p>
 
 <p>
-Traditional solvers compute:
-</p>
-
-<p>
-$$
-u(x,y,t) \text{ for a fixed } u_0
-$$
-</p>
-
-<p>
-DeepONet instead learns the operator:
+Learn the mapping:
 </p>
 
 <p>
@@ -118,36 +138,113 @@ $$
 </p>
 
 <p>
-This converts numerical PDE solving into function approximation.
+One trained model replaces thousands of numerical solves.
 </p>
 
 <hr>
 
 <h2>3. DeepONet Architecture</h2>
 
-<p>The model consists of two neural networks:</p>
+<p>
+DeepONet consists of two networks:
+</p>
 
 <h3>Branch Network</h3>
-<p>Encodes the discretized initial condition $u_0(x,y)$.</p>
+<p>
+Encodes the initial condition $u_0(x,y)$.
+</p>
 
 <h3>Trunk Network</h3>
-<p>Encodes query coordinates $(x,y,t)$.</p>
+<p>
+Encodes spatial–temporal query points $(x,y,t)$.
+</p>
 
-<p>The final prediction is:</p>
+<p>
+Final prediction:
+</p>
 
 <p>
 $$
 u_\theta(x,y,t)
 =
 \sum_{k=1}^{p}
-b_k(u_0)\,
-t_k(x,y,t)
+b_k(u_0)\, t_k(x,y,t)
 $$
 </p>
 
 <hr>
 
-<h2>4. Implementation</h2>
+<h2>4. Data Generation (From Notebook)</h2>
+
+<p>
+We first generate random smooth initial conditions:
+</p>
+
+<pre><code>
+def generate_initial_condition(nx, ny):
+    x = np.linspace(0, 1, nx)
+    y = np.linspace(0, 1, ny)
+    X, Y = np.meshgrid(x, y)
+
+    u0 = np.sin(2*np.pi*X) * np.cos(2*np.pi*Y)
+    return u0
+</code></pre>
+
+<p>
+Then we solve Burgers numerically using finite differences:
+</p>
+
+<pre><code>
+def burgers_step(u, nu, dx, dy, dt):
+    u_x = (u[:,2:] - u[:,:-2]) / (2*dx)
+    u_y = (u[2:,:] - u[:-2,:]) / (2*dy)
+
+    lap = (
+        (u[:,2:] - 2*u[:,1:-1] + u[:,:-2]) / dx**2 +
+        (u[2:,:] - 2*u[1:-1,:] + u[:-2,:]) / dy**2
+    )
+
+    return u[1:-1,1:-1] + dt * (
+        - u[1:-1,1:-1]*(u_x + u_y)
+        + nu * lap
+    )
+</code></pre>
+
+<p>
+Snapshots are stored at multiple time steps.
+</p>
+
+<hr>
+
+<h2>5. Dataset Construction</h2>
+
+<p>
+Each training example consists of:
+</p>
+
+<ul>
+<li>Initial condition vector</li>
+<li>Query coordinates $(x,y,t)$</li>
+<li>True solution value</li>
+</ul>
+
+<pre><code>
+class BurgersDataset(Dataset):
+    def __init__(self, u0_list, coord_list, solution_list):
+        self.u0 = u0_list
+        self.coords = coord_list
+        self.sol = solution_list
+
+    def __len__(self):
+        return len(self.sol)
+
+    def __getitem__(self, idx):
+        return self.u0[idx], self.coords[idx], self.sol[idx]
+</code></pre>
+
+<hr>
+
+<h2>6. DeepONet Model Code</h2>
 
 <h3>Branch Network</h3>
 
@@ -202,46 +299,36 @@ class DeepONet(nn.Module):
 
 <hr>
 
-<h2>5. Dataset Generation</h2>
-
-<p>
-Training data is generated by:
-</p>
-
-<ul>
-<li>Sampling smooth random initial conditions</li>
-<li>Numerically solving the Burgers equation</li>
-<li>Storing solution snapshots</li>
-</ul>
-
-<hr>
-
-<h2>6. Training</h2>
+<h2>7. Training Loop</h2>
 
 <pre><code>
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
 for epoch in range(num_epochs):
+
     pred = model(u0_batch, coord_batch)
     loss = ((pred - true_batch)**2).mean()
 
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch}, Loss: {loss.item()}")
 </code></pre>
 
 <hr>
 
-<h2>7. Results</h2>
+<h2>8. Results</h2>
 
 <p>
-The DeepONet successfully:
+The model:
 </p>
 
 <ul>
 <li>Captures nonlinear convection dynamics</li>
-<li>Learns shock formation</li>
 <li>Generalizes to unseen initial conditions</li>
+<li>Approximates shock regions</li>
 </ul>
 
 <h3>Prediction Example</h3>
@@ -254,24 +341,38 @@ The DeepONet successfully:
 
 <hr>
 
-<h2>8. Observations</h2>
+<h2>9. Lessons Learned</h2>
 
 <ul>
 <li>Branch width controls operator capacity</li>
-<li>Trunk depth controls spatial resolution</li>
-<li>Model generalizes smoothly across time</li>
-<li>Shock regions are hardest to approximate</li>
+<li>Trunk depth controls spatial smoothness</li>
+<li>Shock regions require higher capacity</li>
+<li>Operator learning is sensitive to data resolution</li>
 </ul>
 
 <hr>
 
-<h2>9. Future Work</h2>
+<h2>10. Why This Matters</h2>
+
+<p>
+Neural operator learning is emerging as a powerful alternative
+to traditional numerical solvers.
+</p>
+
+<p>
+This project demonstrates that DeepONets can approximate
+nonlinear PDE operators in 2D.
+</p>
+
+<p>
+This serves as a foundation for:
+</p>
 
 <ul>
 <li>Poisson equation</li>
-<li>Spherical heat equation</li>
+<li>Navier–Stokes</li>
+<li>Heat equation on manifolds</li>
 <li>Spectral operator learning</li>
-<li>Geometry-aware DeepONets</li>
 </ul>
 
 <hr>
