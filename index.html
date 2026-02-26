@@ -436,7 +436,17 @@ ______________________________________________________________
 </code></pre>
 
   <hr>
+<h3>Resolving the Dimensional Mismatch</h3>
+  <p>
+    A standard DeepONet requires the Branch and Trunk to output the exact same latent dimension $p$ to compute the dot product. However, we deliberately bottlenecked our spatial branch to 4 dimensions to force feature invariance, while allowing the trunk 14 dimensions to express complex spatiotemporal basis functions. 
+  </p>
+  <p>
+    To resolve this mathematically before the forward pass, we... <i>[Explain your exact PyTorch mechanism here: e.g., "introduced a final projection layer `nn.Linear(4, 14)` to expand the spatial coefficients into the trunk's basis space, ensuring dimensional alignment while preserving the rigorous bottleneck."]</i>
+  </p>
 
+
+
+  
   <h2>7. The DeepONet Forward Pass: The Dot Product</h2>
 
   <p>
