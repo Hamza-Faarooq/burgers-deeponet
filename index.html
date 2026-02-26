@@ -202,6 +202,18 @@
     $$\mathcal{G}: u_0(x,y) \rightarrow u(x,y,t)$$
   </div>
 
+<h3>The "Traffic Jam" Analogy</h3>
+  <p>
+    If the math looks abstract, think of the Burgers equation as a model of highway traffic. 
+  </p>
+  <p>
+    The convective term ($u \cdot \nabla u$) means that the speed of the wave depends on the wave's height itself. Faster cars (higher $u$) at the back will eventually catch up to slower cars (lower $u$) in the front. This causes the wave to steepen, eventually trying to form an infinitely sharp vertical drop—a <b>shock wave</b> (or a sudden, brutal traffic jam).
+  </p>
+  <p>
+    However, the diffusion term ($\nu \Delta u$) acts like drivers tapping their brakes to maintain a safe distance. It smears out the sharp edges. The exact shape of the fluid flow over time is a constant, delicate tug-of-war between these two effects. 
+  </p>
+
+  
   <p>
     In this post, we'll walk through the code and the mathematical reasoning behind engineering a DeepONet to solve the 2D viscous Burgers equation. We'll look at why we designed a heavily bottlenecked 4-dimensional branch network, how we optimized data loading for a massive 819K-point spatiotemporal dataset, and what our 4x4 grid visualizations tell us about how neural networks perceive fluid shocks.
   </p>
