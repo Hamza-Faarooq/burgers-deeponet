@@ -460,6 +460,41 @@
         <span class="k">return</span> <span class="n">pred</span>
 </code></pre>
 
+
+<h3>Shape Sanity Check: Tracing the Tensors</h3>
+  <p>
+    To truly understand the DeepONet forward pass, let's trace a single batch through the network. Imagine we have a batch size of <code>B = 32</code>, evaluating <code>N = 1000</code> random spatiotemporal points per batch.
+  </p>
+
+  <pre><code><span class="c"># 1. The Branch Input</span>
+u0.shape      <span class="c"># -> [32, 1, 64, 64] (Batch of 32 initial conditions)</span>
+branch_out    <span class="c"># -> [32, 4]         (Compressed to 4 latent coefficients per sample)</span>
+
+<span class="c"># 2. The Trunk Input</span>
+coords.shape  <span class="c"># -> [32, 1000, 3]   (32 batches, 1000 points each, 3 dims: x, y, t)</span>
+trunk_out     <span class="c"># -> [32, 1000, 14]  (Mapped to 14 basis functions per point)</span>
+
+<span class="c"># 3. The Alignment (The tricky part)</span>
+<span class="c"># We cannot dot-product a [32, 4] tensor with a [32, 1000, 14] tensor directly.</span>
+<span class="c"># This is why we bottlenecked the Branch to 4, but our Trunk outputs 14. </span>
+<span class="c"># Wait, we need them to match! </span>
+
+<span class="c"># *Correction for implementation:* Both Branch and Trunk MUST output the same </span>
+<span class="c"># latent dimension `p`. Let's assume we set both to p=14.</span>
+branch_out = branch_out.unsqueeze(1)  <span class="c"># -> [32, 1, 14]</span>
+
+<span class="c"># 4. The Dot Product</span>
+<span class="c"># PyTorch broadcasts the Branch output across the 1000 points.</span>
+pred = torch.sum(branch_out * trunk_out, dim=-1) <span class="c"># -> [32, 1000]</span>
+</code></pre>
+
+  <p>
+    <em>(Note: In architecture design, the final output dimension of the Branch <code>output_dim</code> and the Trunk <code>output_dim</code> must be identical—often referred to as $p$. If your Branch outputs 4 and your Trunk outputs 14, the dot product will fail. In our optimal setup, we align them both to a shared latent space size.)</em>
+  </p>
+
+
+
+  
   <hr>
 
   <h2>8. The Training Loop: Minimizing the Residuals</h2>
