@@ -31,7 +31,7 @@
       max-width: 800px;
       margin: 0 auto;
       padding: 60px 20px;
-      font-family: 'Lora', serif; /* Serif font for a more editorial, long-form reading experience */
+      font-family: 'Lora', serif;
       line-height: 1.8;
       font-size: 18px;
       color: var(--text-color);
@@ -118,7 +118,6 @@
       font-size: 100%;
     }
 
-    /* Comments in code */
     .c { color: #6a737d; font-style: italic; }
     .k { color: #d73a49; font-weight: bold; }
     .n { color: #24292e; }
@@ -200,7 +199,7 @@
   </p>
 
   <div class="math-block">
-    $$ \mathcal{G}: u_0(x,y) \rightarrow u(x,y,t) $$
+    $$\mathcal{G}: u_0(x,y) \rightarrow u(x,y,t)$$
   </div>
 
   <p>
@@ -216,7 +215,7 @@
   </p>
 
   <div class="math-block">
-    $$ \frac{\partial u}{\partial t} + u \cdot \nabla u = \nu \Delta u $$
+    $$\frac{\partial u}{\partial t} + u \cdot \nabla u = \nu \Delta u$$
   </div>
 
   <p>
@@ -233,95 +232,7 @@
 
   <hr>
 
-  <h2>2. Generating the Ground Truth (and the Data Bottleneck)</h2>
-
-  <p>
-    Before we can train an operator, we need ground truth data. We generate random 2D initial conditions $u_0(x,y)$ on a $64 \times 64$ grid and use a finite difference solver to march them forward in time. 
-  </p>
-
-  <p>
-    However, creating a robust training set requires sampling thousands of spatial and temporal points across many initial conditions. We ended up with a massive spatiotemporal dataset containing over <b>819,200 individual query points</b>.
-  </p>
-
-  <p>
-    If you try to pass an 819K-point tensor directly into a PyTorch MLP to calculate the MSE loss, your GPU will immediately trigger a CUDA Out Of Memory (OOM) error. To solve this, we had to engineer a heavily optimized data pipeline.
-  </p>
-
-<pre><code><span class="c"># We cannot evaluate the entire spatiotemporal domain at once.</span>
-<span class="c"># We chunk the data into manageable pieces for the trunk network.</span>
-<span class="k">class</span> <span class="n">BurgersDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
-    <span class="k">def</span> <span class="n">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">u0_data</span><span class="p">,</span> <span class="n">coords_data</span><span class="p">,</span> <span class="n">solution_data</span><span class="p">):</span>
-        <span class="c"># u0_data: (N_samples, 1, 64, 64)</span>
-        <span class="c"># coords_data: (N_samples, N_points, 3) -> (x, y, t)</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">u0</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">u0_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">coords_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">sol</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">solution_data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
-
-<span class="c"># During training, we optimized trunk processing by splitting the query points </span>
-<span class="c"># into over 20,000 discrete chunks. This allows the model to compute gradients </span>
-<span class="c"># efficiently across the 819K point space without memory spikes.</span>
-</code></pre>
-
-  <hr>
-
-  <h2>3. The Architecture: Branch and Trunk</h2>
-
-  <p>
-    The brilliance of the DeepONet theorem (proposed by Lu et al., based on Chen & Chen's universal approximation theorem for operators) is that we can decouple the input function from the query coordinates. The final solution is simply a dot product:
-  </p>
-
-  <div class="math-block">
-    $$ u_\theta(x,y,t) = \sum_{k=1}^{p} b_k(u_0)\, t_k(x,y,t) $$
-  </div>
-
-  <p>
-    Think of it this way: The trunk network learns a universal set of <em>basis functions</em> ($t_k$) for the domain, while the branch network learns to look at the initial condition and predict the <em>coefficients</em> ($b_k$) to weigh those basis functions.
-  </p>
-
-  <h3>The Branch Network: Forcing a Bottleneck</h3>
-  <p>
-    Our initial condition is a $64 \times 64$ grid. We chose a CNN to process it because convection is driven by local spatial gradients, which convolutional kernels excel at detecting.
-  </p>
-  <p>
-    However, the most crucial design choice here was the use of an <code>AdaptiveAvgPool2d</code> layer followed by a severe dimensionality reduction. We bottlenecked the output to a remarkably tight <b>4-dimensional latent space</b> ($p=4$). Why? Because an overly wide branch network tends to memorize the training grid rather than learning the generalized physical operator. Forcing the CNN to compress the entire $64 \times 64$ fluid state into just 4 numbers forces it to learn the most fundamental, invariant features of the initial wave profile.
-  </p>
-
-<pre><code><span class="k">class</span> <span class="n">BranchNet</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="n">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">output_dim</span><span class="o">=</span><span class="n">4</span><span class="p">):</span> <span class="c"># The 4-dimensional bottleneck</span>
-        <span class="n">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">()</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">convs</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Sequential</span><span class="p">(</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">1</span><span class="p">,</span> <span class="n">16</span><span class="p">,</span> <span class="n">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">1</span><span class="p">),</span> <span class="n">nn</span><span class="p">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="p">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">2</span><span class="p">),</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">16</span><span class="p">,</span> <span class="n">32</span><span class="p">,</span> <span class="n">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">1</span><span class="p">),</span> <span class="n">nn</span><span class="p">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="p">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">2</span><span class="p">),</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">32</span><span class="p">,</span> <span class="n">64</span><span class="p">,</span> <span class="n">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">1</span><span class="p">),</span> <span class="n">nn</span><span class="p">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="p">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">2</span><span class="p">)</span>
-        <span class="p">)</span>
-        
-        <span class="c"># Adaptive pooling decouples the architecture from the input grid size.</span>
-        <span class="c"># We compress spatial features to 2x2 regardless of input resolution.</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">AdaptiveAvgPool2d</span><span class="p">((</span><span class="n">2</span><span class="p">,</span> <span class="n">2</span><span class="p">))</span>
-        
-        <span class="n">self</span><span class="p">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Sequential</span><span class="p">(</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">64</span> <span class="o">*</span> <span class="n">2</span> <span class="o">*</span> <span class="n">2</span><span class="p">,</span> <span class="n">128</span><span class="p">),</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">ReLU</span><span class="p">(),</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">128</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span> <span class="c"># Outputs [b_1, b_2, b_3, b_4]</span>
-        <span class="p">)</span>
-</code></pre>
-
-  <h3>The Trunk Network: Mapping the Domain</h3>
-  <p>
-    While the branch is tightly bottlenecked, the trunk requires a bit more expressive capacity to map out the highly non-linear spatiotemporal domain. We paired our 4-dimensional branch with a <b>14-dimensional trunk</b>. The trunk processes the $(x, y, t)$ coordinates through several <code>Tanh</code> activations—we avoid ReLU here because we want our predicted basis functions to be continuously differentiable, just like the PDE solution itself.
-  </p>
-
-  <hr>
-
-
-
-
-
-
-
-  <hr>
-
-  <h2>1. Data Generation: The Numerical Ground Truth</h2>
+  <h2>2. Data Generation: The Numerical Ground Truth</h2>
 
   <p>
     Before a neural network can learn an operator, it needs a teacher. In our case, the teacher is a traditional numerical solver. We generate our ground truth data by solving the 2D viscous Burgers equation using the <b>Finite Difference Method (FDM)</b>.
@@ -366,13 +277,13 @@
     <span class="p">)</span>
 </code></pre>
 
-  <p>
-    This generates extremely high-fidelity data. However, storing every pixel at every time step results in an explosion of data. For our training setup, this resulted in an <b>819,200-point spatiotemporal dataset</b>.
-  </p>
-
   <hr>
 
-  <h2>2. Dataset Engineering: Managing 819K Points</h2>
+  <h2>3. Dataset Engineering: Managing 819K Points</h2>
+
+  <p>
+    This FDM solver generates extremely high-fidelity data. However, storing every pixel at every time step results in an explosion of data. For our training setup, this resulted in an <b>819,200-point spatiotemporal dataset</b>.
+  </p>
 
   <p>
     Feeding 819,200 coordinates into a GPU simultaneously will instantly cause an Out-of-Memory (OOM) error. To train our DeepONet, we must construct a PyTorch <code>Dataset</code> that feeds the model intelligently.
@@ -406,7 +317,7 @@
 
   <hr>
 
-  <h2>3. The Branch Network: The Spatial Encoder</h2>
+  <h2>4. The Branch Network: The Spatial Encoder</h2>
 
   <p>
     The Branch network is responsible for "looking" at the initial condition $u_0(x,y)$ and distilling it into a set of latent coefficients. 
@@ -446,7 +357,7 @@
 
   <hr>
 
-  <h2>4. The Trunk Network: The Coordinate Mapper</h2>
+  <h2>5. The Trunk Network: The Coordinate Mapper</h2>
 
   <p>
     The Trunk network is tasked with learning the spatial-temporal basis functions. It takes the continuous coordinates $(x,y,t)$ and maps them to a higher-dimensional space.
@@ -477,7 +388,7 @@
 
   <hr>
 
-  <h2>5. The DeepONet Forward Pass: The Dot Product</h2>
+  <h2>6. The DeepONet Forward Pass: The Dot Product</h2>
 
   <p>
     The final architecture is surprisingly elegant. We pass the initial condition through the Branch to get the coefficients $b$, and the coordinates through the Trunk to get the basis functions $t$. 
@@ -510,7 +421,7 @@
 
   <hr>
 
-  <h2>6. The Training Loop: Minimizing the Residuals</h2>
+  <h2>7. The Training Loop: Minimizing the Residuals</h2>
 
   <p>
     Training a DeepONet is fundamentally a regression problem. We use the <b>Adam optimizer</b> to minimize the Mean Squared Error (MSE) between our network's continuous prediction and the discrete ground truth data generated by our FDM solver.
@@ -544,25 +455,9 @@
         <span class="nb">print</span><span class="p">(</span><span class="s">f"Epoch {epoch+1} | MSE Loss: {total_loss/len(train_loader):.6f}"</span><span class="p">)</span>
 </code></pre>
 
-  <p>
-    Through this setup, the loss consistently dropped, eventually stabilizing at an exceptional <b>0.0055 MSE</b>. The network had successfully learned the continuous operator mapping for the 1+2D viscous Burgers equation.
-  </p>
+  <hr>
 
-
-
-
-
-
-
-  
-
-
-
-
-
-
-  
-  <h2>4. Training Dynamics and Results</h2>
+  <h2>8. Training Dynamics and Results</h2>
 
   <div class="highlight-box">
     By combining the 4-dim branch and 14-dim trunk, and optimizing the trunk processing of the 20K+ data chunks, we achieved highly stable convergence. The network reached a <b>minimum MSE loss of 0.0055</b> on the training set, and generalized exceptionally well to unseen initial conditions with less than 0.1% validation MSE.
@@ -588,7 +483,7 @@
 
   <hr>
 
-  <h2>5. Next Steps: Moving to Spherical Geometries</h2>
+  <h2>9. Next Steps: Moving to Spherical Geometries</h2>
 
   <p>
     Solving the 1+2D Burgers equation on a Euclidean grid is a powerful proof of concept for neural operators. But many real-world physical systems—like global weather patterns or plasma containment—do not exist on flat planes.
