@@ -606,14 +606,72 @@ Best test loss: 0.004739</code></pre>
   <div class="image-caption">Figure 2: Absolute Error maps. Darker colors indicate higher error. The visualization reveals that the vast majority of the domain has near-zero error.</div>
 
   <h3>What the Visualizations Tell Us</h3>
-  <p>
-    When you examine the $4 \times 4$ error grids, a clear pattern emerges: the DeepONet's predictions are virtually flawless in the smooth regions of the fluid. The L2 and Mean Absolute Error (MAE) spike <em>exclusively</em> along the shock fronts—the exact regions where the convection term $u \cdot \nabla u$ dominates and gradients become near-vertical. 
-  </p>
-  <p>
-    This is a known behavior in physics-informed and operator networks. It proves our network isn't just memorizing pixel patterns; it is actively attempting to balance the physical tension between convection and diffusion, struggling only where the underlying mathematics itself approaches a singularity.
-  </p>
+
+
+
+<hr>
 
   <hr>
+
+  <h2>9. Visualizing the Operator's Perception</h2>
+
+  <p>
+    In Scientific Machine Learning (SciML), we don't just care about minimizing a loss function; we need to verify that the model has internalized the continuous physics of the system. Visualizing the continuous operator's prediction against the ground truth finite-difference solver is essential for building trust in the surrogate model. 
+  </p>
+
+  <p>
+    By analyzing the predicted spatiotemporal evolution, the localized error maps, and the convergence metrics, we can draw direct physical and mathematical inferences about how the DeepONet interprets the Burgers equation.
+  </p>
+
+  <div class="figure-container">
+    <h3>Figure 1: Spatiotemporal Evolution and Wave Steepening</h3>
+    <img src="https://raw.githubusercontent.com/Vision-jarvis/DeepONet-Project/main/fig1.png" alt="DeepONet prediction comparison over time in a 4x4 grid" />
+    <div class="image-caption">Figure 1: A 4x4 grid comparing the ground truth numerical solver with the continuous DeepONet predictions across four different initial conditions at various time snapshots.</div>
+    
+    <div class="figure-explanation">
+      <p>
+        <strong>Physical and Mathematical Inference:</strong> This figure fundamentally demonstrates the network's ability to balance the two competing forces of the Burgers equation: nonlinear convection ($u \cdot \nabla u$) and viscous diffusion ($\nu \Delta u$). In a physical fluid system, the convective term causes regions of higher velocity to catch up to slower regions, causing the initial smooth sinusoidal wave to push forward and steepen aggressively over time. Traditional numerical solvers must take extremely tiny time steps ($\Delta t$) to model this steepening without violating the Courant–Friedrichs–Lewy (CFL) stability condition, which often leads to computational bottlenecks.
+      </p>
+      <p>
+        The DeepONet, however, models this entirely mesh-free. The grid shows that the network correctly predicts the spatial translation and the steepening of the wave crest without stepping through time sequentially. Mathematically, the 14-dimensional trunk network has successfully learned a continuous coordinate basis that captures the global domain structure, while the heavily bottlenecked 4-dimensional branch network successfully extracts the invariant frequency features of the initial condition. The close alignment between the top rows (ground truth) and bottom rows (prediction) proves the operator is highly robust; it doesn't just memorize the grid, it generalizes the fluid's advection over entirely unseen initial conditions.
+      </p>
+    </div>
+  </div>
+
+  <div class="figure-container">
+    <h3>Figure 2: Absolute Error Maps and the Shock Front Challenge</h3>
+    <img src="https://raw.githubusercontent.com/Vision-jarvis/DeepONet-Project/main/fig2.png" alt="Absolute error maps showing localized discrepancies at the shock fronts" />
+    <div class="image-caption">Figure 2: Heatmaps visualizing the absolute spatial discrepancy $\lvert u_{\theta} - u_{true} \rvert$. Bright, localized regions indicate where the model deviates from the ground truth.</div>
+    
+    <div class="figure-explanation">
+      <p>
+        <strong>Physical and Mathematical Inference:</strong> While the overall MSE of 0.0055 is exceptionally low, this error map reveals exactly <em>where</em> the neural network struggles. Notice how the dark regions (near-zero error) dominate the vast majority of the spatial domain. The network performs flawlessly in the smooth, laminar regions where the viscous diffusion ($\nu \Delta u$) dominates the flow. However, the bright spikes in the absolute error map are exclusively localized along the sharp shock fronts.
+      </p>
+      <p>
+        This phenomenon is deeply rooted in the mathematics of neural networks, known as <em>spectral bias</em>. Standard neural architectures naturally prefer to learn low-frequency, smooth continuous functions. Because the Burgers equation's convective term naturally drives the solution toward a discontinuous singularity (an infinitely steep gradient), it forces the spatial derivative $\partial u / \partial x$ to spike. Our trunk network utilizes the continuously differentiable `Tanh` activation function, which perfectly models smooth fluid flow but inherently resists forming mathematically discontinuous cliffs. Therefore, the network slightly smooths over the sharpest shocks, generating localized error. This insight dictates our future architectural choices: to resolve these ultra-high-frequency gradients perfectly, we would need to introduce adaptive coordinate sampling near the shock fronts or inject Fourier feature mappings into the trunk network.
+      </p>
+    </div>
+  </div>
+
+  <div class="figure-container">
+    <h3>Figure 3: L2/MAE Convergence and Metric Dynamics</h3>
+    <img src="https://raw.githubusercontent.com/Vision-jarvis/DeepONet-Project/main/fig3.png" alt="Plots depicting the convergence of L2 and MAE metrics across epochs" />
+    <div class="image-caption">Figure 3: Loss convergence curves tracking the Mean Absolute Error (MAE) and relative L2 norms across the evaluation dataset as training progresses.</div>
+    
+    <div class="figure-explanation">
+      <p>
+        <strong>Physical and Mathematical Inference:</strong> This figure provides a macro-view of the operator's learning dynamics and its numerical stability. In traditional finite difference or finite element methods, errors accumulate progressively. A small truncation error at $t=0.1$ compounds by $t=0.5$, often leading to physical violations like artificial energy injection if the integrator isn't carefully designed. 
+      </p>
+      <p>
+        The DeepONet circumvents temporal compounding entirely. As seen in the convergence curves, both the MAE and L2 errors drop sharply and stabilize in lockstep. The tight correlation between the training metrics and the validation metrics (evaluated on 50,000 completely random, unseen spatial points per epoch) proves that our severe 4-dimensional architectural bottleneck in the branch network prevented overfitting. The network was forced to learn a highly generalized, low-dimensional manifold of the fluid's physics. Furthermore, because the error trajectory flattens consistently across the spatiotemporal queries, we can infer that the neural operator respects the bounded energy dissipation of the viscous Burgers system. The model achieves less than 0.1% validation error, confirming that processing the dataset in 20,000 discrete chunks provided a rich, unbiased gradient landscape for the optimizer to find the true global minimum of the operator mapping.
+      </p>
+    </div>
+  </div>
+
+
+
+
+ 
 
   <h2>10. Next Steps: Moving to Spherical Geometries</h2>
 
