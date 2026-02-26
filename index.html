@@ -220,7 +220,33 @@ ______________________________________________________________
   </p>
 
   <hr>
+<hr>
 
+  <h2> The Theoretical Foundation: Operator Approximation in Banach Spaces</h2>
+
+  <p>
+    Before diving into the code, we must rigorously define what the DeepONet is actually doing. Standard neural networks are restricted to finite-dimensional vector spaces, learning mappings like $f: \mathbb{R}^n \rightarrow \mathbb{R}^m$. However, PDEs are defined by operators that map between infinite-dimensional function spaces.
+  </p>
+
+  <p>
+    Let $\mathcal{V}$ be a Banach space of input functions (our initial conditions $u_0$), and $\mathcal{U}$ be a Banach space of output functions (our spatiotemporal solutions $u$). The Burgers equation defines a non-linear continuous operator $\mathcal{G}: \mathcal{V} \rightarrow \mathcal{U}$.
+  </p>
+
+  <p>
+    The architecture we are building is grounded in the <b>Universal Approximation Theorem for Operators</b> (originally formulated by Chen & Chen). The theorem states that for any continuous operator $\mathcal{G}$ and any error tolerance $\epsilon > 0$, there exists a Branch network and a Trunk network such that:
+  </p>
+
+  <div class="math-block">
+    $$|\mathcal{G}(u_0)(y) - \sum_{k=1}^{p} b_k(u_0(x_1, ..., x_m)) t_k(y)| < \epsilon$$
+  </div>
+
+  <p>
+    Here, the Branch network evaluates the input function at $m$ discrete sensor points (our $64 \times 64$ grid), outputting coefficients $b_k$. The Trunk network spans the continuous domain $y = (x, y, t)$, outputting basis functions $t_k$. By decoupling the function space from the coordinate space, the DeepONet guarantees an approximation of the underlying physics, independent of the grid resolution.
+  </p>
+
+
+
+      
   <h2>1. The Physics: Convection vs. Diffusion</h2>
 
   <p>
