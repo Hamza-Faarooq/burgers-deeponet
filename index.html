@@ -535,6 +535,62 @@ pred = torch.sum(branch_out * trunk_out, dim=-1) <span class="c"># -> [32, 1000]
 
   <h2>9. Training Dynamics and Results</h2>
 
+
+
+<hr>
+
+  <h3>9.1 Watching the Loss: A Log of the Training Dynamics</h2>
+
+  <p>
+    When training neural operators, watching the loss drop is deeply satisfying, but it also provides critical insight into the health of the model. Here is an excerpt from the actual terminal output of our optimized training run:
+  </p>
+
+<pre><code class="language-plaintext">Moving trunk tensor to cuda...
+Training with trunk subsampling: 16384 / 819200 points per step
+Validation will use 50,000 random points (different each epoch)
+Starting training...
+
+First batch debug:
+  u0_batch shape: torch.Size([16, 64, 64]), requires_grad: False
+  trunk_batch shape: torch.Size([16384, 3]), requires_grad: False
+  Model training mode: True
+  u_pred shape: torch.Size([16, 16384]), requires_grad: True
+
+Epoch [   1/2000] | Train Loss: 0.281394 | Test Loss: 0.210911 | LR: 3.00e-04 | Time: 6.0s
+Epoch [  50/2000] | Train Loss: 0.039335 | Test Loss: 0.040047 | LR: 3.00e-04 | Time: 290.0s
+Epoch [ 100/2000] | Train Loss: 0.029351 | Test Loss: 0.027826 | LR: 3.00e-04 | Time: 578.8s
+Epoch [ 200/2000] | Train Loss: 0.024014 | Test Loss: 0.023008 | LR: 3.00e-04 | Time: 1159.6s
+Epoch [ 300/2000] | Train Loss: 0.019085 | Test Loss: 0.019304 | LR: 3.00e-04 | Time: 1735.5s
+Epoch [ 390/2000] | Train Loss: 0.010346 | Test Loss: 0.010833 | LR: 1.50e-04 | Time: 2251.5s
+Epoch [ 500/2000] | Train Loss: 0.007956 | Test Loss: 0.008248 | LR: 7.50e-05 | Time: 2880.9s
+Epoch [ 680/2000] | Train Loss: 0.005950 | Test Loss: 0.006208 | LR: 3.75e-05 | Time: 3910.3s
+Epoch [ 900/2000] | Train Loss: 0.004581 | Test Loss: 0.005168 | LR: 9.37e-06 | Time: 5171.1s
+Epoch [1500/2000] | Train Loss: 0.004107 | Test Loss: 0.004827 | LR: 1.83e-08 | Time: 8626.3s
+Epoch [2000/2000] | Train Loss: 0.004107 | Test Loss: 0.004782 | LR: 1.83e-08 | Time: 11499.2s
+
+Training completed in 11499.2 seconds (191.7 minutes)
+Best test loss: 0.004739</code></pre>
+
+  <h3>Interpreting the Logs</h3>
+  <p>
+    This log tells a fascinating story of network optimization. Right at the top, you can see our "chunking" strategy in action: the network is subsampling $16,384$ coordinates out of the total $819,200$ spatiotemporal points per step. This specific sub-sampling prevents VRAM exhaustion while still providing a statistically significant gradient for the Adam optimizer.
+  </p>
+  <p>
+    Notice the aggressive initial drop: the loss plummets from $0.281$ to $0.039$ in just 50 epochs. This represents the DeepONet quickly learning the trivial parts of the physical domain—the smooth, laminar flows where diffusion dominates.
+  </p>
+  <p>
+    However, the true challenge lies in the long tail of the training. Around epoch 390, a learning rate scheduler automatically cuts the learning rate in half (from $3.00e-04$ to $1.50e-04$). The network is now fine-tuning. This prolonged phase, dragging the loss from $0.010$ down to the final $0.0041$ (and a test loss of $0.0047$), is where the network is fighting the convection term. It is meticulously adjusting the 14 basis functions to accurately model the infinitely steep gradients of the shock fronts without triggering artificial oscillations. The incredibly tight coupling between the training and test loss throughout the 3-hour run confirms that the bottlenecked branch network successfully prevented overfitting.
+  </p>
+
+
+
+
+
+
+
+
+
+  
   <div class="highlight-box">
     By combining the 4-dim branch and 14-dim trunk, and optimizing the trunk processing of the 20K+ data chunks, we achieved highly stable convergence. The network reached a <b>minimum MSE loss of 0.0055</b> on the training set, and generalized exceptionally well to unseen initial conditions with less than 0.1% validation MSE.
   </div>
