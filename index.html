@@ -329,6 +329,35 @@
 
   <hr>
 
+
+<hr>
+
+  <h2>2.5 The Crux: Why DeepONet instead of a U-Net?</h2>
+
+  <p>
+    If we are mapping a 2D grid (initial condition) to another 2D grid (future state), you might ask: <i>"Why not just use a standard Image-to-Image network, like a U-Net?"</i>
+  </p>
+
+  <p>
+    Here is the fundamental limitation of standard CNNs: <b>They are tied to their grid resolution.</b> If you train a U-Net on $64 \times 64$ images, it learns to map a $64 \times 64$ grid to a $64 \times 64$ grid at a specific, fixed time step. If you later want to query the solution at a sub-pixel location (say, $x=0.123, y=0.456$) or at an arbitrary continuous time step (say, $t=0.78$), the U-Net cannot help you without messy interpolations.
+  </p>
+
+  <p>
+    <b>DeepONets represent a paradigm shift: Mesh-Free Operator Learning.</b> 
+  </p>
+
+  <p>
+    Instead of predicting a grid of pixels, a DeepONet learns the continuous mathematical function itself. It separates the problem into two distinct questions:
+  </p>
+  <ol>
+    <li><b>The Branch:</b> "What universe are we in?" (Looking at the initial condition $u_0$).</li>
+    <li><b>The Trunk:</b> "Where exactly are we looking?" (Evaluating the specific coordinates $x, y, t$).</li>
+  </ol>
+  <p>
+    Because the Trunk takes continuous floating-point coordinates as input, the trained model is <i>resolution invariant</i>. You can train it on a coarse $64 \times 64$ grid and evaluate it at a $1024 \times 1024$ resolution entirely for free.
+  </p>
+
+  
   <h2>4. The Branch Network: The Spatial Encoder</h2>
 
   <p>
