@@ -571,7 +571,7 @@ Epoch [2000/2000] | Train Loss: 0.004107 | Test Loss: 0.004782 | LR: 1.83e-08 | 
 Training completed in 11499.2 seconds (191.7 minutes)
 Best test loss: 0.004739</code></pre>
 
-  <h3>Interpreting the Logs</h3>
+  <h3>9.2 Interpreting the Logs</h3>
   <p>
     This log tells a fascinating story of network optimization. Right at the top, you can see our "chunking" strategy in action: the network is subsampling $16,384$ coordinates out of the total $819,200$ spatiotemporal points per step. This specific sub-sampling prevents VRAM exhaustion while still providing a statistically significant gradient for the Adam optimizer.
   </p>
@@ -589,7 +589,7 @@ Best test loss: 0.004739</code></pre>
 
  <hr>
 
-  <h2>9. Visualizing the Operator's Perception</h2>
+  <h2>10. Visualizing the Operator's Perception</h2>
 
   <p>
     In Scientific Machine Learning (SciML), we don't just care about minimizing a loss function; we need to verify that the model has internalized the continuous physics of the system. Visualizing the continuous operator's prediction against the ground truth finite-difference solver is essential for building trust in the surrogate model. 
@@ -658,7 +658,7 @@ Best test loss: 0.004739</code></pre>
 
  
 
-  <h2>10. Next Steps: Moving to Spherical Geometries</h2>
+  <h2>11. Next Steps: Moving to Spherical Geometries</h2>
 
   <p>
     Solving the 1+2D Burgers equation on a Euclidean grid is a powerful proof of concept for neural operators. But many real-world physical systems—like global weather patterns or plasma containment—do not exist on flat planes.
