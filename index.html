@@ -680,7 +680,25 @@ Best test loss: 0.004739</code></pre>
   </p>
 
 
+<hr>
 
+  <h2>Evaluation: Relative $L_2$ Norm and Zero-Shot Super-Resolution</h2>
+
+  <p>
+    In SciML, Mean Squared Error (MSE) is scale-dependent and insufficient for benchmarking. The rigorous standard for evaluating PDE surrogate models is the <b>Relative $L_2$ Error Norm</b>:
+  </p>
+
+  <div class="math-block">
+    $$ \mathcal{E} = \frac{||u_{pred} - u_{true}||_2}{||u_{true}||_2} $$
+  </div>
+
+  <p>
+    Our model achieved remarkable relative error convergence across thousands of <i>unseen</i> test initial conditions. But the most profound advantage of learning the continuous operator $\mathcal{G}$ rather than a discrete pixel-mapping is <b>Zero-Shot Super-Resolution</b>.
+  </p>
+
+  <p>
+    Because the Trunk network accepts continuous floating-point coordinates $(x,y,t)$, the model is entirely mesh-free during inference. We trained the model on data sampled from a coarse $64 \times 64$ spatial grid. However, without retraining, we can query the Trunk at a $256 \times 256$ spatial resolution, or at arbitrary floating-point time steps like $t=0.31415$. The operator intrinsically interpolates the physics with analytical smoothness, a feat impossible for standard U-Net architectures.
+  </p>
 
 
 
