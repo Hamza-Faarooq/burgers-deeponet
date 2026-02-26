@@ -589,22 +589,6 @@ Best test loss: 0.004739</code></pre>
 
 
 
-
-  
-  <div class="highlight-box">
-    By combining the 4-dim branch and 14-dim trunk, and optimizing the trunk processing of the 20K+ data chunks, we achieved highly stable convergence. The network reached a <b>minimum MSE loss of 0.0055</b> on the training set, and generalized exceptionally well to unseen initial conditions with less than 0.1% validation MSE.
-  </div>
-
-  <p>
-    But loss numbers only tell half the story. To truly understand what the operator learned, we developed comprehensive $4 \times 4$ grid visualizations for error analysis.
-  </p>
-
-  <img src="assets/figures/prediction.png" alt="DeepONet Predictions 4x4 Grid" />
-  <div class="image-caption">Figure 1: A 4x4 grid comparing the Ground Truth (top row) with the DeepONet continuous prediction (bottom row) at various time steps $t$. Notice how accurately the network predicts the steepening of the wave front over time.</div>
-
-  <img src="assets/figures/error.png" alt="DeepONet MAE and L2 Error Maps" />
-  <div class="image-caption">Figure 2: Absolute Error maps. Darker colors indicate higher error. The visualization reveals that the vast majority of the domain has near-zero error.</div>
-
   <h3>What the Visualizations Tell Us</h3>
 
 
