@@ -313,6 +313,255 @@
 
   <hr>
 
+
+
+
+
+
+
+  <hr>
+
+  <h2>1. Data Generation: The Numerical Ground Truth</h2>
+
+  <p>
+    Before a neural network can learn an operator, it needs a teacher. In our case, the teacher is a traditional numerical solver. We generate our ground truth data by solving the 2D viscous Burgers equation using the <b>Finite Difference Method (FDM)</b>.
+  </p>
+
+  <p>
+    First, we create a variety of initial velocity fields, $u_0(x,y)$, using combinations of sinusoidal waves. This ensures our network sees a diverse set of wave interactions and gradients.
+  </p>
+
+<pre><code class="language-python"><span class="c"># Generating a smooth, periodic initial condition</span>
+<span class="k">def</span> <span class="n">generate_initial_condition</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">0</span><span class="p">,</span> <span class="n">1</span><span class="p">,</span> <span class="n">nx</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">0</span><span class="p">,</span> <span class="n">1</span><span class="p">,</span> <span class="n">ny</span><span class="p">)</span>
+    <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+    <span class="c"># A combination of sines and cosines creates complex wave interactions</span>
+    <span class="n">u0</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">sin</span><span class="p">(</span><span class="n">2</span><span class="o">*</span><span class="n">np</span><span class="p">.</span><span class="n">pi</span><span class="o">*</span><span class="n">X</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">cos</span><span class="p">(</span><span class="n">2</span><span class="o">*</span><span class="n">np</span><span class="p">.</span><span class="n">pi</span><span class="o">*</span><span class="n">Y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">u0</span>
+</code></pre>
+
+  <p>
+    Next, we step this initial condition forward in time. We use <b>central differences</b> for the spatial derivatives (to capture the gradients accurately) and a <b>forward difference</b> for the time derivative (Euler stepping).
+  </p>
+
+<pre><code class="language-python"><span class="k">def</span> <span class="n">burgers_step</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+    <span class="c"># 1. Compute first-order spatial derivatives (Central Difference)</span>
+    <span class="c"># This maps to the non-linear convection term: u * \nabla u</span>
+    <span class="n">u_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">u</span><span class="p">[:,</span><span class="n">2</span><span class="p">:]</span> <span class="o">-</span> <span class="n">u</span><span class="p">[:,:</span><span class="o">-</span><span class="n">2</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">2</span><span class="o">*</span><span class="n">dx</span><span class="p">)</span>
+    <span class="n">u_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">2</span><span class="p">:,:]</span> <span class="o">-</span> <span class="n">u</span><span class="p">[:</span><span class="o">-</span><span class="n">2</span><span class="p">,:])</span> <span class="o">/</span> <span class="p">(</span><span class="n">2</span><span class="o">*</span><span class="n">dy</span><span class="p">)</span>
+
+    <span class="c"># 2. Compute the Laplacian (Second-order Central Difference)</span>
+    <span class="c"># This maps to the diffusion term: \nu \Delta u</span>
+    <span class="n">lap</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">u</span><span class="p">[:,</span><span class="n">2</span><span class="p">:]</span> <span class="o">-</span> <span class="n">2</span><span class="o">*</span><span class="n">u</span><span class="p">[:,</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[:,:</span><span class="o">-</span><span class="n">2</span><span class="p">])</span> <span class="o">/</span> <span class="n">dx</span><span class="o">**</span><span class="n">2</span> <span class="o">+</span>
+        <span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">2</span><span class="p">:,:]</span> <span class="o">-</span> <span class="n">2</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">,:]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[:</span><span class="o">-</span><span class="n">2</span><span class="p">,:])</span> <span class="o">/</span> <span class="n">dy</span><span class="o">**</span><span class="n">2</span>
+    <span class="p">)</span>
+
+    <span class="c"># 3. Explicit Time Stepping</span>
+    <span class="c"># We update the interior of the grid based on the PDE formulation</span>
+    <span class="k">return</span> <span class="n">u</span><span class="p">[</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">,</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="o">-</span> <span class="n">u</span><span class="p">[</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">,</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">u_x</span> <span class="o">+</span> <span class="n">u_y</span><span class="p">)</span> <span class="o">+</span> <span class="n">nu</span> <span class="o">*</span> <span class="n">lap</span>
+    <span class="p">)</span>
+</code></pre>
+
+  <p>
+    This generates extremely high-fidelity data. However, storing every pixel at every time step results in an explosion of data. For our training setup, this resulted in an <b>819,200-point spatiotemporal dataset</b>.
+  </p>
+
+  <hr>
+
+  <h2>2. Dataset Engineering: Managing 819K Points</h2>
+
+  <p>
+    Feeding 819,200 coordinates into a GPU simultaneously will instantly cause an Out-of-Memory (OOM) error. To train our DeepONet, we must construct a PyTorch <code>Dataset</code> that feeds the model intelligently.
+  </p>
+
+  <p>
+    A DeepONet requires three pieces of information for every forward pass:
+  </p>
+  <ol>
+    <li><b>$u_0$:</b> The initial condition (Branch input).</li>
+    <li><b>$(x,y,t)$:</b> The specific spatiotemporal coordinate we want to query (Trunk input).</li>
+    <li><b>$u_{true}$:</b> The ground truth value at that exact coordinate (for calculating the loss).</li>
+  </ol>
+
+<pre><code class="language-python"><span class="k">class</span> <span class="n">BurgersDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="k">def</span> <span class="n">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">u0_list</span><span class="p">,</span> <span class="n">coord_list</span><span class="p">,</span> <span class="n">solution_list</span><span class="p">):</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">u0</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">u0_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">coord_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">sol</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">solution_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="n">__len__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">sol</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="n">__getitem__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">u0</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">self</span><span class="p">.</span><span class="n">coords</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">self</span><span class="p">.</span><span class="n">sol</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+</code></pre>
+
+  <div class="highlight-box">
+    <b>The Chunking Optimization:</b> Instead of passing the whole domain to the trunk network, we split the 819K coordinates into over 20,000 discrete chunks during training. This keeps the VRAM usage flat while allowing the network to sweep across the entire spatiotemporal volume efficiently.
+  </div>
+
+  <hr>
+
+  <h2>3. The Branch Network: The Spatial Encoder</h2>
+
+  <p>
+    The Branch network is responsible for "looking" at the initial condition $u_0(x,y)$ and distilling it into a set of latent coefficients. 
+  </p>
+  <p>
+    Because the input is a 2D grid, a Multi-Layer Perceptron (MLP) would destroy the spatial relationships between neighboring pixels. Instead, we use a Convolutional Neural Network (CNN). The CNN acts as a feature extractor, looking for the local gradients and peaks that will eventually evolve into shock fronts.
+  </p>
+  <p>
+    However, the magic happens at the <code>AdaptiveAvgPool2d</code> layer. We aggressively bottleneck the network, compressing the feature maps down to a mere <b>4-dimensional vector</b>. This forces the model to learn the invariant physical properties of the initial condition rather than just memorizing pixel values.
+  </p>
+
+<pre><code class="language-python"><span class="k">class</span> <span class="n">BranchNet</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="n">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">output_dim</span><span class="o">=</span><span class="n">4</span><span class="p">):</span> <span class="c"># 4-dimensional bottleneck</span>
+        <span class="n">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="c"># CNN blocks to extract spatial hierarchies</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">convs</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="p">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">1</span><span class="p">,</span> <span class="n">16</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">1</span><span class="p">),</span> <span class="n">nn</span><span class="p">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="p">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">2</span><span class="p">),</span>
+            <span class="n">nn</span><span class="p">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">16</span><span class="p">,</span> <span class="n">32</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">1</span><span class="p">),</span> <span class="n">nn</span><span class="p">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="p">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">2</span><span class="p">),</span>
+        <span class="p">)</span>
+        
+        <span class="c"># Decouples the network from the exact input grid size</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">AdaptiveAvgPool2d</span><span class="p">((</span><span class="n">2</span><span class="p">,</span> <span class="n">2</span><span class="p">))</span>
+        
+        <span class="c"># Final projection to the latent basis</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">32</span> <span class="o">*</span> <span class="n">2</span> <span class="o">*</span> <span class="n">2</span><span class="p">,</span> <span class="n">64</span><span class="p">),</span>
+            <span class="n">nn</span><span class="p">.</span><span class="n">ReLU</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">64</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span> 
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="n">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">convs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">pool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</code></pre>
+
+  <hr>
+
+  <h2>4. The Trunk Network: The Coordinate Mapper</h2>
+
+  <p>
+    The Trunk network is tasked with learning the spatial-temporal basis functions. It takes the continuous coordinates $(x,y,t)$ and maps them to a higher-dimensional space.
+  </p>
+
+  <p>
+    Notice the activation function: we use <b>Tanh</b> instead of ReLU. A neural network with ReLU activations is piecewise linear, meaning its second derivative is zero everywhere (and undefined at the hinges). Since the Burgers equation relies on a smooth second spatial derivative (the Laplacian $\Delta u$), we must use a smooth, continuously differentiable activation function like Tanh to ensure the learned operator respects the physical continuity of fluid flow. 
+  </p>
+
+  <p>
+    In our optimized runs, we expanded the Trunk to a <b>14-dimensional output</b> to give the coordinate basis enough capacity to represent complex shock geometries.
+  </p>
+
+<pre><code class="language-python"><span class="k">class</span> <span class="n">TrunkNet</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="n">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">input_dim</span><span class="o">=</span><span class="n">3</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="o">=</span><span class="n">128</span><span class="p">,</span> <span class="n">output_dim</span><span class="o">=</span><span class="n">14</span><span class="p">):</span>
+        <span class="n">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">),</span>
+            <span class="n">nn</span><span class="p">.</span><span class="n">Tanh</span><span class="p">(),</span> <span class="c"># Smooth activations for continuous physics</span>
+            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">),</span>
+            <span class="n">nn</span><span class="p">.</span><span class="n">Tanh</span><span class="p">(),</span>
+            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span> <span class="c"># Must map to the Trunk basis dimension</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="n">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">net</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+</code></pre>
+
+  <hr>
+
+  <h2>5. The DeepONet Forward Pass: The Dot Product</h2>
+
+  <p>
+    The final architecture is surprisingly elegant. We pass the initial condition through the Branch to get the coefficients $b$, and the coordinates through the Trunk to get the basis functions $t$. 
+  </p>
+  
+  <p>
+    The prediction at any point in space and time is simply the dot product of these two vectors: $u(x,y,t) = b \cdot t$.
+  </p>
+
+<pre><code class="language-python"><span class="k">class</span> <span class="n">DeepONet</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="n">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">branch</span><span class="p">,</span> <span class="n">trunk</span><span class="p">):</span>
+        <span class="n">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">branch</span> <span class="o">=</span> <span class="n">branch</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">trunk</span> <span class="o">=</span> <span class="n">trunk</span>
+
+    <span class="k">def</span> <span class="n">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="c"># Evaluate branch logic -> output shape: (batch_size, p)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">branch</span><span class="p">(</span><span class="n">u0</span><span class="p">)</span> 
+        
+        <span class="c"># Evaluate trunk logic -> output shape: (batch_size, num_points, p)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">trunk</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> 
+        
+        <span class="c"># Reshape b to broadcast across the num_points dimension</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">b</span><span class="p">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">1</span><span class="p">)</span> 
+        
+        <span class="c"># The final Operator prediction is the sum over the latent dimension (dot product)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">sum</span><span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">t</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="n">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="n">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pred</span>
+</code></pre>
+
+  <hr>
+
+  <h2>6. The Training Loop: Minimizing the Residuals</h2>
+
+  <p>
+    Training a DeepONet is fundamentally a regression problem. We use the <b>Adam optimizer</b> to minimize the Mean Squared Error (MSE) between our network's continuous prediction and the discrete ground truth data generated by our FDM solver.
+  </p>
+
+<pre><code class="language-python"><span class="c"># Initialize model, optimizer, and loss function</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">DeepONet</span><span class="p">(</span><span class="n">BranchNet</span><span class="p">(),</span> <span class="n">TrunkNet</span><span class="p">()).</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">optim</span><span class="p">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="p">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
+<span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">MSELoss</span><span class="p">()</span>
+
+<span class="c"># The Training Loop</span>
+<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_epochs</span><span class="p">):</span>
+    <span class="n">model</span><span class="p">.</span><span class="n">train</span><span class="p">()</span>
+    <span class="n">total_loss</span> <span class="o">=</span> <span class="n">0</span>
+    
+    <span class="k">for</span> <span class="n">u0_batch</span><span class="p">,</span> <span class="n">coord_batch</span><span class="p">,</span> <span class="n">true_batch</span> <span class="ow">in</span> <span class="n">train_loader</span><span class="p">:</span>
+        <span class="n">u0_batch</span><span class="p">,</span> <span class="n">coord_batch</span><span class="p">,</span> <span class="n">true_batch</span> <span class="o">=</span> <span class="n">u0_batch</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">coord_batch</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">true_batch</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        
+        <span class="c"># Forward Pass</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">u0_batch</span><span class="p">,</span> <span class="n">coord_batch</span><span class="p">).</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">true_batch</span><span class="p">)</span>
+        
+        <span class="c"># Backpropagation</span>
+        <span class="n">optimizer</span><span class="p">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="n">loss</span><span class="p">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="p">.</span><span class="n">step</span><span class="p">()</span>
+        
+        <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="p">.</span><span class="n">item</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="n">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">50</span> <span class="o">==</span> <span class="n">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s">f"Epoch {epoch+1} | MSE Loss: {total_loss/len(train_loader):.6f}"</span><span class="p">)</span>
+</code></pre>
+
+  <p>
+    Through this setup, the loss consistently dropped, eventually stabilizing at an exceptional <b>0.0055 MSE</b>. The network had successfully learned the continuous operator mapping for the 1+2D viscous Burgers equation.
+  </p>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+  
   <h2>4. Training Dynamics and Results</h2>
 
   <div class="highlight-box">
