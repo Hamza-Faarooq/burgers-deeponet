@@ -187,6 +187,23 @@
     </div>
   </header>
 ______________________________________________________________
+
+
+
+  <p>
+    In this post, we'll walk through the code and the mathematical reasoning behind engineering a DeepONet to solve the 2D viscous Burgers equation. We'll look at why we designed a heavily bottlenecked 4-dimensional branch network, how we optimized data loading for a massive 819K-point spatiotemporal dataset, and what our visualizations tell us about how neural networks perceive fluid shocks.
+  </p>
+
+  <div class="highlight-box" style="background-color: #f6f8fa; border-left-color: #24292e;">
+    <strong>💻 Get the Code:</strong> The complete PyTorch implementation for this project—including the finite-difference data generation pipeline, the optimized DeepONet architecture, and the plotting scripts—is fully open-sourced. You can follow along with the complete Jupyter Notebook and run the experiments yourself here:<br><br>
+    <a href="https://github.com/Vision-jarvis/DeepONet-Project/tree/main/Burger's%20PDE" target="_blank" style="color: #0366d6; font-family: 'Inter', sans-serif; font-weight: 600; text-decoration: none;">&rarr; GitHub Repository: burgers-deeponet</a>
+  </div>
+  <hr>
+
+  <h2>1. The Theoretical Foundation: Operator Approximation in Banach Spaces</h2>
+
+
+  --------------------------------------------------------------
   <p>
     If you spend enough time working with Partial Differential Equations (PDEs), you quickly realize a frustrating truth: solving them numerically is a massive computational bottleneck. Every time your initial conditions change—even slightly—you have to run your finite difference or finite element solvers from scratch, marching painstakingly through time steps to satisfy the Courant–Friedrichs–Lewy (CFL) condition.
   </p>
