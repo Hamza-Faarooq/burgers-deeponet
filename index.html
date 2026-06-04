@@ -7,249 +7,790 @@
 
   <script>
     MathJax = {
-      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'] }
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --bg-color: #fdfdfd;
-      --text-color: #2c2e33;
-      --heading-color: #111111;
-      --accent-color: #0366d6;
-      --code-bg: #f6f8fa;
-      --code-border: #e1e4e8;
-      --border-color: #eaecef;
+      --bg: #f9f8f5;
+      --bg2: #f3f1ec;
+      --bg3: #edeae3;
+      --surface: #ffffff;
+      --surface2: #f4f2ed;
+      --border: rgba(0,0,0,0.07);
+      --border2: rgba(0,0,0,0.11);
+      --text: #3d3a34;
+      --text-dim: #8a8579;
+      --text-bright: #1a1814;
+      --accent: #2563eb;
+      --accent2: #6d4ed8;
+      --accent3: #d95f0e;
+      --green: #1a7f52;
+      --gold: #b07d1a;
     }
 
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
     body {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 60px 20px;
-      font-family: 'Lora', serif;
-      line-height: 1.8;
-      font-size: 18px;
-      color: var(--text-color);
-      background-color: var(--bg-color);
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 17px;
+      line-height: 1.85;
       -webkit-font-smoothing: antialiased;
     }
 
-    header {
-      text-align: center;
-      margin-bottom: 70px;
-      font-family: 'Inter', sans-serif;
+    /* ── Progress bar ── */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+      background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+      z-index: 9999;
+      transition: width 0.1s linear;
     }
 
-    h1 {
-      font-size: 2.8em;
-      font-weight: 800;
-      color: var(--heading-color);
-      line-height: 1.15;
-      margin-bottom: 20px;
-      letter-spacing: -0.04em;
+    /* ── Top nav ── */
+    #top-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 900;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; height: 56px;
+      background: rgba(249,248,245,0.90);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      transform: translateY(-100%);
+      transition: transform 0.4s ease;
+    }
+    #top-nav.visible { transform: translateY(0); }
+    #top-nav .nav-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 500;
+      color: var(--text-dim);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 60%;
+    }
+    #top-nav .nav-links { display: flex; gap: 24px; }
+    #top-nav .nav-links a {
+      font-size: 12px; font-weight: 500; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-dim);
+      text-decoration: none; transition: color 0.2s;
+    }
+    #top-nav .nav-links a:hover { color: var(--accent); }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative; overflow: hidden;
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center; padding: 100px 24px 80px;
+    }
+    .hero-grid-bg {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(37,99,235,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37,99,235,0.06) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    .hero-glow {
+      position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%);
+      width: 700px; height: 400px;
+      background: radial-gradient(ellipse, rgba(109,78,216,0.08) 0%, rgba(37,99,235,0.05) 40%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(79,156,249,0.1); border: 1px solid rgba(79,156,249,0.25);
+      color: var(--accent); padding: 6px 16px; border-radius: 100px;
+      font-size: 12px; font-weight: 500; letter-spacing: 0.1em;
+      text-transform: uppercase; margin-bottom: 32px;
+      animation: fadeUp 0.8s ease both;
+    }
+    .hero-tag::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
     }
 
-    .subtitle {
-      font-size: 1.2em;
-      color: #555;
-      margin-bottom: 25px;
-      font-weight: 500;
+    h1.hero-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+      font-weight: 400; line-height: 1.12;
+      color: var(--text-bright);
+      max-width: 840px; margin: 0 auto 20px;
+      animation: fadeUp 0.9s 0.1s ease both;
+      letter-spacing: -0.02em;
+    }
+    h1.hero-title em {
+      font-style: italic;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
 
-    .author-info {
-      font-size: 0.9em;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    .hero-subtitle {
+      font-size: 1.1rem; color: var(--text-dim); max-width: 620px;
+      margin: 0 auto 48px; line-height: 1.7;
+      animation: fadeUp 1s 0.2s ease both;
     }
 
-    h2 {
-      font-family: 'Inter', sans-serif;
-      font-size: 1.8em;
-      font-weight: 700;
-      color: var(--heading-color);
-      margin-top: 60px;
-      margin-bottom: 25px;
+    .hero-meta {
+      display: flex; flex-wrap: wrap; gap: 16px; justify-content: center;
+      animation: fadeUp 1s 0.3s ease both;
+    }
+    .meta-pill {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 8px; padding: 10px 18px;
+      font-size: 13px; line-height: 1.5; color: var(--text-dim);
+      text-align: left;
+    }
+    .meta-pill strong { display: block; color: var(--text-bright); font-weight: 500; font-size: 12px; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.07em; }
+    .meta-pill a { color: var(--accent); text-decoration: none; }
+    .meta-pill a:hover { text-decoration: underline; }
+
+    .scroll-indicator {
+      position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      color: var(--text-dim); font-size: 11px; letter-spacing: 0.1em;
+      text-transform: uppercase; animation: fadeUp 1s 0.5s ease both;
+    }
+    .scroll-indicator .chevron {
+      width: 20px; height: 20px;
+      border-right: 2px solid var(--border2); border-bottom: 2px solid var(--border2);
+      transform: rotate(45deg); animation: bounce 1.6s infinite;
+    }
+    @keyframes bounce {
+      0%,100% { transform: rotate(45deg) translateY(0); }
+      50% { transform: rotate(45deg) translateY(5px); }
     }
 
-    h3 {
-      font-family: 'Inter', sans-serif;
-      font-size: 1.3em;
-      font-weight: 600;
-      color: var(--heading-color);
-      margin-top: 40px;
-      margin-bottom: 15px;
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    p {
+    /* ── Layout ── */
+    .container {
+      max-width: 780px; margin: 0 auto; padding: 0 24px;
+    }
+    .wide-container {
+      max-width: 1040px; margin: 0 auto; padding: 0 24px;
+    }
+
+    /* ── Sections ── */
+    .section { padding: 72px 0; }
+    .section + .section { border-top: 1px solid var(--border); }
+
+    /* ── Section labels ── */
+    .section-label {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--accent);
       margin-bottom: 24px;
     }
-
-    /* Code Block Styling */
-    code {
-      font-family: 'Fira Code', monospace;
-      background-color: rgba(175, 184, 193, 0.2);
-      padding: 0.2em 0.4em;
-      border-radius: 4px;
-      font-size: 85%;
+    .section-label::before {
+      content: ''; width: 24px; height: 2px; background: var(--accent); border-radius: 2px;
     }
+
+    /* ── Headings ── */
+    h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.7rem, 3vw, 2.3rem);
+      font-weight: 400; color: var(--text-bright);
+      line-height: 1.2; margin-bottom: 28px; letter-spacing: -0.02em;
+    }
+    h3 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.1rem; font-weight: 600;
+      color: var(--text-bright); margin: 44px 0 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    h3::before {
+      content: ''; width: 4px; height: 18px;
+      background: linear-gradient(var(--accent2), var(--accent));
+      border-radius: 2px; flex-shrink: 0;
+    }
+    p { margin-bottom: 22px; color: var(--text); }
+
+    /* ── Inline code ── */
+    code {
+      font-family: 'DM Mono', monospace;
+      background: var(--surface); border: 1px solid var(--border2);
+      padding: 0.15em 0.5em; border-radius: 5px;
+      font-size: 82%; color: #a8d8ff;
+    }
+
+    /* ── Code blocks ── */
+    .code-wrapper {
+      position: relative; margin: 32px 0; border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border2);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .code-header {
+      background: #f0ede6;
+      padding: 10px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .code-dots { display: flex; gap: 7px; }
+    .code-dots span {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    .code-dots .d1 { background: #ff5f57; }
+    .code-dots .d2 { background: #febc2e; }
+    .code-dots .d3 { background: #28c840; }
+    .code-lang {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--text-dim); letter-spacing: 0.08em;
+    }
+    .copy-btn {
+      background: none; border: 1px solid var(--border2);
+      color: var(--text-dim); padding: 4px 12px;
+      border-radius: 6px; font-size: 11px; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+    }
+    .copy-btn:hover { color: var(--text-bright); border-color: var(--accent); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green); }
 
     pre {
-      background-color: var(--code-bg);
-      border: 1px solid var(--code-border);
-      border-radius: 8px;
-      padding: 24px;
-      overflow-x: auto;
-      font-size: 14px;
-      line-height: 1.6;
-      box-shadow: inset 0 1px 4px rgba(0,0,0,0.02);
-      margin: 30px 0;
+      background: #faf8f3;
+      padding: 24px 22px; margin: 0;
+      overflow-x: auto; font-size: 13.5px;
+      line-height: 1.7; tab-size: 2;
     }
-
     pre code {
-      background-color: transparent;
-      padding: 0;
-      border-radius: 0;
-      font-size: 100%;
+      background: none; border: none; padding: 0;
+      font-size: 100%; color: #2d2a24;
     }
+    .c { color: #9e9689; font-style: italic; }
+    .k { color: #b83232; }
+    .kd { color: #1d5fa6; }
+    .n { color: #2d2a24; }
+    .s { color: #1a6e3c; }
+    .nb { color: #b06000; }
+    .mi { color: #1d5fa6; }
+    .o { color: #b83232; }
+    .fm { color: #6d4ed8; }
 
-    .c { color: #6a737d; font-style: italic; }
-    .k { color: #d73a49; font-weight: bold; }
-    .n { color: #24292e; }
-    .s { color: #032f62; }
-
-    ul, ol {
-      margin-bottom: 24px;
-      padding-left: 20px;
-    }
-
-    li {
-      margin-bottom: 10px;
-    }
-
-    img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 6px;
-      margin: 40px 0 15px 0;
-      border: 1px solid var(--border-color);
-      display: block;
-    }
-
-    .image-caption {
-      text-align: center;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.85em;
-      color: #666;
-      margin-bottom: 40px;
-      padding: 0 20px;
-    }
-
-    .highlight-box {
-      background-color: #f0f7ff;
-      border-left: 4px solid var(--accent-color);
-      padding: 20px 25px;
-      margin: 40px 0;
-      border-radius: 0 8px 8px 0;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.95em;
-    }
-
-    hr {
-      height: 1px;
-      background-color: var(--border-color);
-      border: none;
-      margin: 60px 0;
-    }
-
+    /* ── Math blocks ── */
     .math-block {
-      padding: 10px 0;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 10px; padding: 24px 28px;
+      margin: 28px 0; overflow-x: auto;
       text-align: center;
-      margin: 30px 0;
+    }
+
+    /* ── Callout boxes ── */
+    .callout {
+      border-radius: 12px; padding: 24px 28px; margin: 32px 0;
+      display: flex; gap: 18px; align-items: flex-start;
+    }
+    .callout-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+    .callout-body { flex: 1; }
+    .callout-body strong {
+      display: block; font-size: 14px; font-weight: 600;
+      margin-bottom: 8px; color: var(--text-bright);
+      text-transform: uppercase; letter-spacing: 0.07em;
+    }
+    .callout-body p { margin: 0; font-size: 15px; }
+    .callout.info {
+      background: rgba(79,156,249,0.08);
+      border: 1px solid rgba(79,156,249,0.25);
+    }
+    .callout.info .callout-body strong { color: var(--accent); }
+    .callout.warning {
+      background: rgba(249,123,79,0.08);
+      border: 1px solid rgba(249,123,79,0.25);
+    }
+    .callout.warning .callout-body strong { color: var(--accent3); }
+    .callout.success {
+      background: rgba(62,207,142,0.08);
+      border: 1px solid rgba(62,207,142,0.25);
+    }
+    .callout.success .callout-body strong { color: var(--green); }
+    .callout.purple {
+      background: rgba(124,106,247,0.08);
+      border: 1px solid rgba(124,106,247,0.3);
+    }
+    .callout.purple .callout-body strong { color: var(--accent2); }
+
+    /* ── Specs box ── */
+    .specs-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; margin: 28px 0;
+    }
+    .spec-card {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 10px; padding: 18px 20px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .spec-card:hover { border-color: var(--accent2); background: var(--surface2); }
+    .spec-card .spec-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px;
+    }
+    .spec-card .spec-value {
+      font-family: 'DM Mono', monospace; font-size: 16px;
+      color: var(--text-bright); font-weight: 500;
+    }
+    .spec-card .spec-desc {
+      font-size: 12px; color: var(--text-dim); margin-top: 4px;
+    }
+
+    /* ── Lists ── */
+    ul, ol { padding-left: 0; margin-bottom: 24px; list-style: none; }
+    li {
+      position: relative; padding-left: 22px; margin-bottom: 10px;
+      color: var(--text);
+    }
+    ul li::before {
+      content: ''; position: absolute; left: 0; top: 11px;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: linear-gradient(var(--accent2), var(--accent));
+    }
+    ol { counter-reset: li-counter; }
+    ol li { counter-increment: li-counter; }
+    ol li::before {
+      content: counter(li-counter);
+      position: absolute; left: 0; top: 0;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px; font-weight: 500; color: var(--accent);
+      background: rgba(79,156,249,0.1); border: 1px solid rgba(79,156,249,0.25);
+      width: 18px; height: 18px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 4px; line-height: 1;
+    }
+
+    /* ── Divider ── */
+    hr { border: none; margin: 60px 0; }
+    .section-divider {
+      display: flex; align-items: center; gap: 20px;
+      color: var(--text-dim); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      margin: 64px 0;
+    }
+    .section-divider::before, .section-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── Training log ── */
+    .log-wrapper {
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border2); margin: 32px 0;
+    }
+    .log-header {
+      background: var(--surface2);
+      padding: 10px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .log-header .log-title {
+      font-size: 12px; font-weight: 500; color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .log-status {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green); animation: pulse 2s infinite;
+    }
+    .log-body {
+      background: #0d1117; padding: 20px 22px;
+      font-family: 'DM Mono', monospace; font-size: 12.5px;
+      line-height: 1.8; overflow-x: auto;
+      max-height: 460px; overflow-y: auto;
+    }
+    .log-body::-webkit-scrollbar { width: 6px; }
+    .log-body::-webkit-scrollbar-track { background: #0d1117; }
+    .log-body::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+    .log-line { display: flex; gap: 16px; }
+    .log-epoch { color: #79c0ff; flex-shrink: 0; }
+    .log-train { color: #ffa657; }
+    .log-test { color: var(--green); }
+    .log-lr { color: var(--accent2); }
+    .log-time { color: var(--text-dim); }
+    .log-dim { color: #8b949e; }
+    .log-highlight { color: var(--gold); font-weight: 500; }
+
+    /* ── Figure containers ── */
+    .figure-block {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 16px; overflow: hidden; margin: 40px 0;
+    }
+    .figure-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 14px;
+    }
+    .figure-num {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      color: white; font-size: 11px; font-weight: 600;
+      padding: 4px 10px; border-radius: 6px; flex-shrink: 0;
+      font-family: 'DM Mono', monospace;
+    }
+    .figure-header h3 {
+      font-size: 14px; color: var(--text-bright);
+      margin: 0; font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+    }
+    .figure-header h3::before { display: none; }
+    .figure-img-area {
+      background: #070a0f;
+      min-height: 160px; display: flex;
+      align-items: center; justify-content: center;
+      padding: 12px;
+    }
+    .figure-img-area img {
+      max-width: 100%; height: auto; border-radius: 6px;
+      margin: 0; border: none;
+    }
+    .figure-placeholder {
+      text-align: center; color: var(--text-dim);
+      font-size: 13px; padding: 40px;
+    }
+    .figure-placeholder .ph-icon { font-size: 40px; margin-bottom: 10px; }
+    .figure-caption {
+      padding: 12px 24px;
+      font-size: 12px; color: var(--text-dim);
+      border-top: 1px solid var(--border);
+      font-style: italic;
+    }
+    .figure-body { padding: 24px; }
+    .figure-body p { font-size: 15px; margin-bottom: 16px; }
+    .figure-body p:last-child { margin-bottom: 0; }
+
+    /* ── Table of contents ── */
+    .toc-panel {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 14px; padding: 28px;
+      margin: 48px 0;
+    }
+    .toc-title {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-dim);
+      margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+    }
+    .toc-title::before { content: '§'; color: var(--accent2); font-size: 14px; }
+    .toc-list { list-style: none; padding: 0; margin: 0; }
+    .toc-list li { margin-bottom: 0; padding: 0; }
+    .toc-list li::before { display: none; }
+    .toc-list a {
+      display: flex; align-items: center; gap: 14px;
+      padding: 9px 0;
+      color: var(--text-dim); text-decoration: none;
+      font-size: 14px; font-weight: 400;
+      border-bottom: 1px solid var(--border);
+      transition: color 0.2s;
+    }
+    .toc-list li:last-child a { border-bottom: none; }
+    .toc-list a:hover { color: var(--accent); }
+    .toc-list .toc-num {
+      font-family: 'DM Mono', monospace; font-size: 11px;
+      color: var(--accent2); min-width: 28px;
+    }
+
+    /* ── Stats strip ── */
+    .stats-strip {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border2); border-radius: 14px;
+      overflow: hidden; margin: 40px 0;
+    }
+    .stat-item {
+      background: var(--surface);
+      padding: 24px 20px; text-align: center;
+      transition: background 0.2s;
+    }
+    .stat-item:hover { background: var(--surface2); }
+    .stat-val {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem; color: var(--text-bright);
+      line-height: 1; margin-bottom: 8px;
+    }
+    .stat-val span { color: var(--accent); }
+    .stat-lbl {
+      font-size: 11px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim);
+    }
+
+    /* ── GitHub CTA ── */
+    .github-cta {
+      display: flex; align-items: center; gap: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 14px; padding: 24px 28px;
+      margin: 32px 0; text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .github-cta:hover { border-color: var(--accent); background: var(--surface2); }
+    .github-cta .gh-icon {
+      width: 44px; height: 44px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .github-cta .gh-text strong {
+      display: block; font-size: 14px; font-weight: 600;
+      color: var(--text-bright); margin-bottom: 4px;
+    }
+    .github-cta .gh-text span {
+      font-size: 13px; color: var(--accent);
+      font-family: 'DM Mono', monospace;
+    }
+    .github-cta .gh-arrow {
+      margin-left: auto; color: var(--text-dim); font-size: 20px;
+      transition: transform 0.2s;
+    }
+    .github-cta:hover .gh-arrow { transform: translateX(5px); }
+
+    /* ── Comparison card ── */
+    .comparison-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 32px 0;
+    }
+    .cmp-card {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 12px; padding: 22px;
+    }
+    .cmp-card.bad { border-top: 3px solid #ff5f57; }
+    .cmp-card.good { border-top: 3px solid var(--green); }
+    .cmp-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; margin-bottom: 14px;
+    }
+    .cmp-card.bad .cmp-label { color: #ff5f57; }
+    .cmp-card.good .cmp-label { color: var(--green); }
+    .cmp-list { list-style: none; padding: 0; margin: 0; }
+    .cmp-list li { font-size: 14px; padding: 5px 0 5px 20px; position: relative; border-bottom: none; }
+    .cmp-card.bad .cmp-list li::before {
+      content: '✗'; position: absolute; left: 0;
+      color: #ff5f57; width: auto; height: auto;
+      border-radius: 0; background: none; top: 5px; font-size: 14px;
+    }
+    .cmp-card.good .cmp-list li::before {
+      content: '✓'; position: absolute; left: 0;
+      color: var(--green); width: auto; height: auto;
+      border-radius: 0; background: none; top: 5px; font-size: 14px;
+    }
+
+    /* ── Architecture diagram ── */
+    .arch-diagram {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 14px; padding: 32px; margin: 32px 0;
       overflow-x: auto;
+    }
+    .arch-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+    }
+    .arch-node {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 10px; padding: 12px 18px;
+      text-align: center; min-width: 110px;
+    }
+    .arch-node .an-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+    .arch-node .an-val { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--text-bright); font-weight: 500; margin-top: 4px; }
+    .arch-node.accent { border-color: var(--accent); background: rgba(79,156,249,0.08); }
+    .arch-node.purple { border-color: var(--accent2); background: rgba(124,106,247,0.08); }
+    .arch-node.orange { border-color: var(--accent3); background: rgba(249,123,79,0.08); }
+    .arch-node.green { border-color: var(--green); background: rgba(62,207,142,0.08); }
+    .arch-arrow { color: var(--text-dim); font-size: 20px; flex-shrink: 0; }
+    .arch-label-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 40px; margin-top: 20px; padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .arch-legend { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim); }
+    .arch-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* ── Image styling ── */
+    img {
+      max-width: 100%; height: auto; border-radius: 10px;
+      border: 1px solid var(--border2); display: block;
+    }
+    .image-caption {
+      text-align: center; font-size: 12px; color: var(--text-dim);
+      margin: 10px 0 32px; font-style: italic;
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 64px 24px 40px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    .footer-inner { max-width: 780px; margin: 0 auto; }
+    .footer-badge {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: 12px; color: var(--text-dim);
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 100px; padding: 8px 20px; margin-bottom: 28px;
+    }
+    .footer-text { font-size: 14px; color: var(--text-dim); }
+    .footer-text a { color: var(--accent); text-decoration: none; }
+
+    /* ── Scroll-fade-in ── */
+    .reveal {
+      opacity: 0; transform: translateY(28px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.in-view { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 640px) {
+      .comparison-grid { grid-template-columns: 1fr; }
+      .arch-row { flex-direction: column; }
+      .arch-arrow { transform: rotate(90deg); }
+      .hero { padding: 80px 20px 70px; }
+      .stats-strip { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
-
 <body>
 
-  <header>
-    <h1>Learning the 1+2D Burgers Equation with DeepONets</h1>
-    <div class="subtitle">A deep dive into continuous operator learning, spatial bottlenecks, and predicting shock fronts in fluid dynamics.</div>
-    <div class="author-info">
-      Research under Prof. Anirbit Mukherjee | University of Manchester<br>
-      By: <a href="https://hamza-faarooq.github.io/" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: none; font-weight: 500;">MUHAMMAD HAMZA</a> & RUHAN SRIVASTAVA <br> INDIAN INSTITUTE OF TECHNOLOGY, KHARAGPUR
+<div id="progress-bar"></div>
+
+<nav id="top-nav">
+  <span class="nav-title">Learning the 1+2D Burgers Equation with DeepONets</span>
+  <div class="nav-links">
+    <a href="#physics">Physics</a>
+    <a href="#data">Data</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#results">Results</a>
+  </div>
+</nav>
+
+<!-- ───────────────── HERO ───────────────── -->
+<section class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-glow"></div>
+  <span class="hero-tag">Neural Operator Learning · Scientific ML</span>
+  <h1 class="hero-title">
+    Learning the 1+2D Burgers Equation
+    <em>with DeepONets</em>
+  </h1>
+  <p class="hero-subtitle">
+    A deep dive into continuous operator learning, spatial bottlenecks, and predicting shock fronts in fluid dynamics.
+  </p>
+  <div class="hero-meta">
+    <div class="meta-pill">
+      <strong>Institution</strong>
+      Indian Institute of Technology, Kharagpur
     </div>
-  </header>
-______________________________________________________________
+    <div class="meta-pill">
+      <strong>Authors</strong>
+      <a href="https://hamza-faarooq.github.io/" target="_blank">Muhammad Hamza</a> &amp; Ruhan Srivastava
+    </div>
+    <div class="meta-pill">
+      <strong>Research Supervisor</strong>
+      Prof. Anirbit Mukherjee · Univ. of Manchester
+    </div>
+    <div class="meta-pill">
+      <strong>Framework</strong>
+      PyTorch · Finite Differences
+    </div>
+  </div>
+  <div class="scroll-indicator">
+    <span>Scroll</span>
+    <div class="chevron"></div>
+  </div>
+</section>
 
+<!-- ───────────────── INTRO ───────────────── -->
+<div class="container section reveal">
 
+  <a class="github-cta" href="https://github.com/Vision-jarvis/DeepONet-Project/tree/main/Burger's%20PDE" target="_blank">
+    <div class="gh-icon">⬡</div>
+    <div class="gh-text">
+      <strong>Open Source Implementation</strong>
+      <span>→ github.com/Vision-jarvis/DeepONet-Project</span>
+    </div>
+    <span class="gh-arrow">→</span>
+  </a>
 
   <p>
-    In this post, we'll walk through the code and the mathematical reasoning behind engineering a DeepONet to solve the 2D viscous Burgers equation. We'll look at why we designed a heavily bottlenecked 4-dimensional branch network, how we optimized data loading for a massive 819K-point spatiotemporal dataset, and what our visualizations tell us about how neural networks perceive fluid shocks.
+    In this post, we walk through the code and mathematical reasoning behind engineering a DeepONet to solve the 2D viscous Burgers equation. We examine why we designed a heavily bottlenecked 4-dimensional branch network, how we optimized data loading for a massive 819K-point spatiotemporal dataset, and what our visualizations tell us about how neural networks perceive fluid shocks.
   </p>
 
-  <div class="highlight-box" style="background-color: #f6f8fa; border-left-color: #24292e;">
-    <strong>💻 Get the Code:</strong> The complete PyTorch implementation for this project—including the finite-difference data generation pipeline, the optimized DeepONet architecture, and the plotting scripts—is fully open-sourced. You can follow along with the complete Jupyter Notebook and run the experiments yourself here:<br><br>
-    <a href="https://github.com/Vision-jarvis/DeepONet-Project/tree/main/Burger's%20PDE" target="_blank" style="color: #0366d6; font-family: 'Inter', sans-serif; font-weight: 600; text-decoration: none;">&rarr; GitHub Repository: burgers-deeponet</a>
+  <!-- TABLE OF CONTENTS -->
+  <div class="toc-panel">
+    <div class="toc-title">Contents</div>
+    <ul class="toc-list">
+      <li><a href="#theory"><span class="toc-num">01</span> Theoretical Foundation: Operator Approximation in Banach Spaces</a></li>
+      <li><a href="#physics"><span class="toc-num">02</span> The Physics: Convection vs. Diffusion</a></li>
+      <li><a href="#data"><span class="toc-num">03</span> Data Generation: The Numerical Ground Truth</a></li>
+      <li><a href="#dataset"><span class="toc-num">04</span> Dataset Engineering: Managing 819K Points</a></li>
+      <li><a href="#deeponet-vs-unet"><span class="toc-num">05</span> The Crux: Why DeepONet instead of a U-Net?</a></li>
+      <li><a href="#branch"><span class="toc-num">06</span> The Branch Network: The Spatial Encoder</a></li>
+      <li><a href="#trunk"><span class="toc-num">07</span> The Trunk Network: The Coordinate Mapper</a></li>
+      <li><a href="#forward"><span class="toc-num">08</span> The DeepONet Forward Pass</a></li>
+      <li><a href="#training"><span class="toc-num">09</span> The Training Loop</a></li>
+      <li><a href="#results"><span class="toc-num">10</span> Training Dynamics &amp; Results</a></li>
+      <li><a href="#viz"><span class="toc-num">11</span> Visualizing the Operator's Perception</a></li>
+      <li><a href="#next"><span class="toc-num">12</span> Next Steps: Spherical Geometries</a></li>
+    </ul>
   </div>
-  <hr>
 
-  <h2>1. The Theoretical Foundation: Operator Approximation in Banach Spaces</h2>
+  <!-- KEY STATS -->
+  <div class="stats-strip">
+    <div class="stat-item">
+      <div class="stat-val">819<span>K</span></div>
+      <div class="stat-lbl">Spatiotemporal Points</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">64<span>²</span></div>
+      <div class="stat-lbl">Spatial Grid</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">0<span>.</span>0047</div>
+      <div class="stat-lbl">Best Test Loss (MSE)</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">191<span>min</span></div>
+      <div class="stat-lbl">Total Training Time</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">2<span>K</span></div>
+      <div class="stat-lbl">Training Epochs</div>
+    </div>
+  </div>
+</div>
 
+<!-- ───────────────── THEORY ───────────────── -->
+<div id="theory" class="container section reveal">
+  <div class="section-label">Section 01</div>
+  <h2>Theoretical Foundation:<br>Operator Approximation in Banach Spaces</h2>
 
   <p>
     If you spend enough time working with Partial Differential Equations (PDEs), you quickly realize a frustrating truth: solving them numerically is a massive computational bottleneck. Every time your initial conditions change—even slightly—you have to run your finite difference or finite element solvers from scratch, marching painstakingly through time steps to satisfy the Courant–Friedrichs–Lewy (CFL) condition.
   </p>
-
   <p>
     But what if we didn't have to solve the PDE step-by-step? What if a neural network could learn the underlying physics so well that it could map an entire 2D initial condition field directly to the continuous solution at <em>any</em> future point in time?
   </p>
-
   <p>
-    This is the promise of <b>Deep Operator Networks (DeepONets)</b>. Instead of mapping a finite grid to a finite grid, we learn the continuous operator itself:
+    This is the promise of <strong>Deep Operator Networks (DeepONets)</strong>. Instead of mapping a finite grid to a finite grid, we learn the continuous operator itself:
   </p>
 
   <div class="math-block">
     $$\mathcal{G}: u_0(x,y) \rightarrow u(x,y,t)$$
   </div>
 
-<h3>The "Traffic Jam" Analogy</h3>
-  <p>
-    If the math looks abstract, think of the Burgers equation as a model of highway traffic. 
-  </p>
-  <p>
-    The convective term ($u \cdot \nabla u$) means that the speed of the wave depends on the wave's height itself. Faster cars (higher $u$) at the back will eventually catch up to slower cars (lower $u$) in the front. This causes the wave to steepen, eventually trying to form an infinitely sharp vertical drop—a <b>shock wave</b> (or a sudden, brutal traffic jam).
-  </p>
-  <p>
-    However, the diffusion term ($\nu \Delta u$) acts like drivers tapping their brakes to maintain a safe distance. It smears out the sharp edges. The exact shape of the fluid flow over time is a constant, delicate tug-of-war between these two effects. 
-  </p>
-
-  
-  <p>
-    In this post, we'll walk through the code and the mathematical reasoning behind engineering a DeepONet to solve the 2D viscous Burgers equation. We'll look at why we designed a heavily bottlenecked 4-dimensional branch network, how we optimized data loading for a massive 819K-point spatiotemporal dataset, and what our 4x4 grid visualizations tell us about how neural networks perceive fluid shocks.
-  </p>
-
-  <hr>
-<hr>
-
-  <h2> The Theoretical Foundation: Operator Approximation in Banach Spaces</h2>
-
   <p>
     Before diving into the code, we must rigorously define what the DeepONet is actually doing. Standard neural networks are restricted to finite-dimensional vector spaces, learning mappings like $f: \mathbb{R}^n \rightarrow \mathbb{R}^m$. However, PDEs are defined by operators that map between infinite-dimensional function spaces.
   </p>
-
   <p>
     Let $\mathcal{V}$ be a Banach space of input functions (our initial conditions $u_0$), and $\mathcal{U}$ be a Banach space of output functions (our spatiotemporal solutions $u$). The Burgers equation defines a non-linear continuous operator $\mathcal{G}: \mathcal{V} \rightarrow \mathcal{U}$.
   </p>
-
   <p>
-    The architecture we are building is grounded in the <b>Universal Approximation Theorem for Operators</b> (originally formulated by Chen & Chen). The theorem states that for any continuous operator $\mathcal{G}$ and any error tolerance $\epsilon > 0$, there exists a Branch network and a Trunk network such that:
+    The architecture we are building is grounded in the <strong>Universal Approximation Theorem for Operators</strong> (originally formulated by Chen &amp; Chen). The theorem states that for any continuous operator $\mathcal{G}$ and any error tolerance $\epsilon > 0$, there exists a Branch network and a Trunk network such that:
   </p>
 
   <div class="math-block">
@@ -259,11 +800,12 @@ ______________________________________________________________
   <p>
     Here, the Branch network evaluates the input function at $m$ discrete sensor points (our $64 \times 64$ grid), outputting coefficients $b_k$. The Trunk network spans the continuous domain $y = (x, y, t)$, outputting basis functions $t_k$. By decoupling the function space from the coordinate space, the DeepONet guarantees an approximation of the underlying physics, independent of the grid resolution.
   </p>
+</div>
 
-
-
-      
-  <h2>1. The Physics: Convection vs. Diffusion</h2>
+<!-- ───────────────── PHYSICS ───────────────── -->
+<div id="physics" class="container section reveal">
+  <div class="section-label">Section 02</div>
+  <h2>The Physics:<br>Convection vs. Diffusion</h2>
 
   <p>
     The 2D viscous Burgers equation is a beautiful, deeply frustrating PDE. It is the quintessential testing ground for nonlinear fluid dynamics:
@@ -273,411 +815,542 @@ ______________________________________________________________
     $$\frac{\partial u}{\partial t} + u \cdot \nabla u = \nu \Delta u$$
   </div>
 
-  <p>
-    Notice the two competing forces on the right and left sides:
-  </p>
+  <p>Notice the two competing forces:</p>
+
   <ul>
-    <li><b>$u \cdot \nabla u$ (Nonlinear Convection):</b> This term describes how the velocity field pushes itself. Because regions of high velocity catch up to regions of low velocity, this term constantly tries to create infinitely steep gradients—known as <em>shocks</em>.</li>
-    <li><b>$\nu \Delta u$ (Diffusion):</b> Scaled by the kinematic viscosity $\nu$, the Laplacian acts as a smoothing agent, smearing out sharp gradients.</li>
+    <li><strong>$u \cdot \nabla u$ (Nonlinear Convection):</strong> This term describes how the velocity field pushes itself. Because regions of high velocity catch up to regions of low velocity, this term constantly tries to create infinitely steep gradients—known as <em>shocks</em>.</li>
+    <li><strong>$\nu \Delta u$ (Diffusion):</strong> Scaled by the kinematic viscosity $\nu$, the Laplacian acts as a smoothing agent, smearing out sharp gradients.</li>
   </ul>
 
-
-<h3>The Method of Characteristics and Singular Perturbation</h3>
+  <h3>The "Traffic Jam" Analogy</h3>
   <p>
-    To truly appreciate the difficulty of learning this operator, we must analyze the fluid dynamics through the <b>Method of Characteristics</b>. 
+    If the math looks abstract, think of the Burgers equation as a model of highway traffic.
+  </p>
+  <p>
+    The convective term ($u \cdot \nabla u$) means the speed of the wave depends on the wave's height itself. Faster cars (higher $u$) at the back will eventually catch up to slower cars (lower $u$) in front. This causes the wave to steepen, eventually trying to form an infinitely sharp vertical drop—a <strong>shock wave</strong>.
+  </p>
+  <p>
+    The diffusion term ($\nu \Delta u$) acts like drivers tapping their brakes to maintain a safe distance—it smears out sharp edges. The exact shape of the fluid flow over time is a constant, delicate tug-of-war between these two effects.
+  </p>
+
+  <h3>The Method of Characteristics and Singular Perturbation</h3>
+  <p>
+    To truly appreciate the difficulty of learning this operator, we must analyze the fluid dynamics through the <strong>Method of Characteristics</strong>.
   </p>
   <p>
     Consider the inviscid limit where the kinematic viscosity approaches zero ($\nu \to 0$). The equation reduces to $\frac{\partial u}{\partial t} + u \cdot \nabla u = 0$. The characteristic curves—the paths in spacetime along which the fluid velocity is constant—travel at speed $u$. Because regions of higher velocity travel faster, they inevitably catch up to slower regions. Mathematically, the characteristics intersect. At the point of intersection, the spatial gradient $\nabla u$ blows up to infinity in finite time, creating a multi-valued, unphysical solution.
   </p>
   <p>
-    The addition of the Laplacian diffusion term ($\nu \Delta u$) acts as a <b>singular perturbation</b>. It dissipates the momentum flux just enough to regularize the discontinuity, creating a steep, narrow shock layer instead of infinite gradient blow-up. 
+    The addition of the Laplacian diffusion term ($\nu \Delta u$) acts as a <strong>singular perturbation</strong>. It dissipates the momentum flux just enough to regularize the discontinuity, creating a steep, narrow shock layer instead of infinite gradient blow-up.
   </p>
+
+  <div class="callout warning">
+    <span class="callout-icon">⚡</span>
+    <div class="callout-body">
+      <strong>The Spectral Bias Problem</strong>
+      <p>For a neural network, this is a nightmare. Neural networks suffer from <strong>spectral bias</strong>—they naturally favor low-frequency, smooth functions. Modeling the sharp transition across a shock front requires synthesizing extreme high-frequency Fourier components without triggering Gibbs-like oscillations. The lower the viscosity $\nu$, the harder the operator is to learn.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────── DATA ───────────────── -->
+<div id="data" class="container section reveal">
+  <div class="section-label">Section 03</div>
+  <h2>Data Generation:<br>The Numerical Ground Truth</h2>
+
   <p>
-    For a neural network, this is a nightmare. Neural networks suffer from <b>spectral bias</b>—they naturally favor low-frequency, smooth functions. Modeling the sharp transition across a shock front requires synthesizing extreme high-frequency Fourier components without triggering Gibbs-like oscillations. The lower the viscosity $\nu$, the harder the operator is to learn.
+    Before a neural network can learn an operator, it needs a teacher. In our case, the teacher is a traditional numerical solver. We generate our ground truth data by solving the 2D viscous Burgers equation using the <strong>Finite Difference Method (FDM)</strong>.
   </p>
 
-
-      
-  <p>
-    Neural networks generally hate discontinuities. Approximating the sharp shock fronts generated by the convective term without triggering massive oscillations (similar to the Gibbs phenomenon in Fourier analysis) is the ultimate test for our operator architecture.
-  </p>
-
-  <hr>
-
-  <h2>2. Data Generation: The Numerical Ground Truth</h2>
-
-  <p>
-    Before a neural network can learn an operator, it needs a teacher. In our case, the teacher is a traditional numerical solver. We generate our ground truth data by solving the 2D viscous Burgers equation using the <b>Finite Difference Method (FDM)</b>.
-  </p>
-
-      <div class="highlight-box">
-    <b>Rigorous PDE Specifications & Setup:</b><br>
-    <ul>
-      <li><b>Viscosity ($\nu$):</b> $\nu = 0.01$. This pushes the system into a challenging convection-dominated regime, forcing steep gradients.</li>
-      <li><b>Spatiotemporal Domain:</b> Evaluated on the unit square $\Omega = [0, 1]^2$ over time $t \in [0, 2]$.</li>
-      <li><b>Boundary Conditions:</b> Dirichlet boundary conditions ($u=0$ at $\partial \Omega$) were enforced, grounding the wave energy at the domain edges.</li>
-    </ul>
+  <div class="specs-grid">
+    <div class="spec-card">
+      <div class="spec-label">Viscosity (ν)</div>
+      <div class="spec-value">0.01</div>
+      <div class="spec-desc">Convection-dominated regime, steep gradients</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Spatial Domain</div>
+      <div class="spec-value">[0,1]²</div>
+      <div class="spec-desc">Unit square Ω</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Time Domain</div>
+      <div class="spec-value">t ∈ [0,2]</div>
+      <div class="spec-desc">2 time units forward</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Boundary Conditions</div>
+      <div class="spec-value">Dirichlet</div>
+      <div class="spec-desc">u = 0 at ∂Ω — grounded wave energy</div>
+    </div>
   </div>
 
   <p>
     First, we create a variety of initial velocity fields, $u_0(x,y)$, using combinations of sinusoidal waves. This ensures our network sees a diverse set of wave interactions and gradients.
   </p>
 
-<pre><code class="language-python"><span class="c"># Generating a smooth, periodic initial condition</span>
-<span class="k">def</span> <span class="n">generate_initial_condition</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">):</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">0</span><span class="p">,</span> <span class="n">1</span><span class="p">,</span> <span class="n">nx</span><span class="p">)</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">0</span><span class="p">,</span> <span class="n">1</span><span class="p">,</span> <span class="n">ny</span><span class="p">)</span>
-    <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+  <div class="code-wrapper">
+    <div class="code-header">
+      <div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+      <span class="code-lang">python · generate_initial_condition.py</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+<pre><code><span class="c"># Generating a smooth, periodic initial condition</span>
+<span class="k">def</span> <span class="fm">generate_initial_condition</span>(nx, ny):
+    x <span class="o">=</span> np.linspace(<span class="mi">0</span>, <span class="mi">1</span>, nx)
+    y <span class="o">=</span> np.linspace(<span class="mi">0</span>, <span class="mi">1</span>, ny)
+    X, Y <span class="o">=</span> np.meshgrid(x, y)
 
     <span class="c"># A combination of sines and cosines creates complex wave interactions</span>
-    <span class="n">u0</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">sin</span><span class="p">(</span><span class="n">2</span><span class="o">*</span><span class="n">np</span><span class="p">.</span><span class="n">pi</span><span class="o">*</span><span class="n">X</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="p">.</span><span class="n">cos</span><span class="p">(</span><span class="n">2</span><span class="o">*</span><span class="n">np</span><span class="p">.</span><span class="n">pi</span><span class="o">*</span><span class="n">Y</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">u0</span>
-</code></pre>
+    u0 <span class="o">=</span> np.sin(<span class="mi">2</span><span class="o">*</span>np.pi<span class="o">*</span>X) <span class="o">*</span> np.cos(<span class="mi">2</span><span class="o">*</span>np.pi<span class="o">*</span>Y)
+    <span class="k">return</span> u0</code></pre>
+  </div>
 
   <p>
-    Next, we step this initial condition forward in time. We use <b>central differences</b> for the spatial derivatives (to capture the gradients accurately) and a <b>forward difference</b> for the time derivative (Euler stepping).
+    Next, we step this initial condition forward in time. We use <strong>central differences</strong> for the spatial derivatives (to capture the gradients accurately) and a <strong>forward difference</strong> for the time derivative (Euler stepping).
   </p>
 
-<pre><code class="language-python"><span class="k">def</span> <span class="n">burgers_step</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+  <div class="code-wrapper">
+    <div class="code-header">
+      <div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+      <span class="code-lang">python · burgers_fdm_solver.py</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+<pre><code><span class="k">def</span> <span class="fm">burgers_step</span>(u, nu, dx, dy, dt):
     <span class="c"># 1. Compute first-order spatial derivatives (Central Difference)</span>
     <span class="c"># This maps to the non-linear convection term: u * \nabla u</span>
-    <span class="n">u_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">u</span><span class="p">[:,</span><span class="n">2</span><span class="p">:]</span> <span class="o">-</span> <span class="n">u</span><span class="p">[:,:</span><span class="o">-</span><span class="n">2</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">2</span><span class="o">*</span><span class="n">dx</span><span class="p">)</span>
-    <span class="n">u_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">2</span><span class="p">:,:]</span> <span class="o">-</span> <span class="n">u</span><span class="p">[:</span><span class="o">-</span><span class="n">2</span><span class="p">,:])</span> <span class="o">/</span> <span class="p">(</span><span class="n">2</span><span class="o">*</span><span class="n">dy</span><span class="p">)</span>
+    u_x <span class="o">=</span> (u[:, <span class="mi">2</span>:] <span class="o">-</span> u[:, :<span class="mi">-2</span>]) <span class="o">/</span> (<span class="mi">2</span><span class="o">*</span>dx)
+    u_y <span class="o">=</span> (u[<span class="mi">2</span>:, :] <span class="o">-</span> u[:<span class="mi">-2</span>, :]) <span class="o">/</span> (<span class="mi">2</span><span class="o">*</span>dy)
 
     <span class="c"># 2. Compute the Laplacian (Second-order Central Difference)</span>
     <span class="c"># This maps to the diffusion term: \nu \Delta u</span>
-    <span class="n">lap</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="p">(</span><span class="n">u</span><span class="p">[:,</span><span class="n">2</span><span class="p">:]</span> <span class="o">-</span> <span class="n">2</span><span class="o">*</span><span class="n">u</span><span class="p">[:,</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[:,:</span><span class="o">-</span><span class="n">2</span><span class="p">])</span> <span class="o">/</span> <span class="n">dx</span><span class="o">**</span><span class="n">2</span> <span class="o">+</span>
-        <span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">2</span><span class="p">:,:]</span> <span class="o">-</span> <span class="n">2</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">,:]</span> <span class="o">+</span> <span class="n">u</span><span class="p">[:</span><span class="o">-</span><span class="n">2</span><span class="p">,:])</span> <span class="o">/</span> <span class="n">dy</span><span class="o">**</span><span class="n">2</span>
-    <span class="p">)</span>
+    lap <span class="o">=</span> (
+        (u[:, <span class="mi">2</span>:] <span class="o">-</span> <span class="mi">2</span><span class="o">*</span>u[:, <span class="mi">1</span>:<span class="mi">-1</span>] <span class="o">+</span> u[:, :<span class="mi">-2</span>]) <span class="o">/</span> dx<span class="o">**</span><span class="mi">2</span> <span class="o">+</span>
+        (u[<span class="mi">2</span>:, :] <span class="o">-</span> <span class="mi">2</span><span class="o">*</span>u[<span class="mi">1</span>:<span class="mi">-1</span>, :] <span class="o">+</span> u[:<span class="mi">-2</span>, :]) <span class="o">/</span> dy<span class="o">**</span><span class="mi">2</span>
+    )
 
-    <span class="c"># 3. Explicit Time Stepping</span>
-    <span class="c"># We update the interior of the grid based on the PDE formulation</span>
-    <span class="k">return</span> <span class="n">u</span><span class="p">[</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">,</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">(</span>
-        <span class="o">-</span> <span class="n">u</span><span class="p">[</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">,</span><span class="n">1</span><span class="p">:</span><span class="o">-</span><span class="n">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">u_x</span> <span class="o">+</span> <span class="n">u_y</span><span class="p">)</span> <span class="o">+</span> <span class="n">nu</span> <span class="o">*</span> <span class="n">lap</span>
-    <span class="p">)</span>
-</code></pre>
+    <span class="c"># 3. Explicit Time Stepping — update the interior of the grid</span>
+    <span class="k">return</span> u[<span class="mi">1</span>:<span class="mi">-1</span>, <span class="mi">1</span>:<span class="mi">-1</span>] <span class="o">+</span> dt <span class="o">*</span> (
+        <span class="o">-</span> u[<span class="mi">1</span>:<span class="mi">-1</span>, <span class="mi">1</span>:<span class="mi">-1</span>] <span class="o">*</span> (u_x <span class="o">+</span> u_y) <span class="o">+</span> nu <span class="o">*</span> lap
+    )</code></pre>
+  </div>
+</div>
 
-  <hr>
-
-  <h2>3. Dataset Engineering: Managing 819K Points</h2>
+<!-- ───────────────── DATASET ───────────────── -->
+<div id="dataset" class="container section reveal">
+  <div class="section-label">Section 04</div>
+  <h2>Dataset Engineering:<br>Managing 819K Points</h2>
 
   <p>
-    This FDM solver generates extremely high-fidelity data. However, storing every pixel at every time step results in an explosion of data. For our training setup, this resulted in an <b>819,200-point spatiotemporal dataset</b>.
+    This FDM solver generates extremely high-fidelity data. However, storing every pixel at every time step results in an explosion of data. For our training setup, this resulted in an <strong>819,200-point spatiotemporal dataset</strong>.
   </p>
 
   <p>
     Feeding 819,200 coordinates into a GPU simultaneously will instantly cause an Out-of-Memory (OOM) error. To train our DeepONet, we must construct a PyTorch <code>Dataset</code> that feeds the model intelligently.
   </p>
 
-  <p>
-    A DeepONet requires three pieces of information for every forward pass:
-  </p>
+  <p>A DeepONet requires three pieces of information for every forward pass:</p>
   <ol>
-    <li><b>$u_0$:</b> The initial condition (Branch input).</li>
-    <li><b>$(x,y,t)$:</b> The specific spatiotemporal coordinate we want to query (Trunk input).</li>
-    <li><b>$u_{true}$:</b> The ground truth value at that exact coordinate (for calculating the loss).</li>
+    <li><strong>$u_0$:</strong> The initial condition (Branch input).</li>
+    <li><strong>$(x,y,t)$:</strong> The specific spatiotemporal coordinate we want to query (Trunk input).</li>
+    <li><strong>$u_{true}$:</strong> The ground truth value at that exact coordinate (for calculating the loss).</li>
   </ol>
 
-<pre><code class="language-python"><span class="k">class</span> <span class="n">BurgersDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
-    <span class="k">def</span> <span class="n">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">u0_list</span><span class="p">,</span> <span class="n">coord_list</span><span class="p">,</span> <span class="n">solution_list</span><span class="p">):</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">u0</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">u0_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">coords</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">coord_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">sol</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">solution_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="p">.</span><span class="n">float32</span><span class="p">)</span>
+  <div class="code-wrapper">
+    <div class="code-header">
+      <div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+      <span class="code-lang">python · dataset.py</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+<pre><code><span class="k">class</span> <span class="nb">BurgersDataset</span>(Dataset):
+    <span class="k">def</span> <span class="fm">__init__</span>(self, u0_list, coord_list, solution_list):
+        self.u0     <span class="o">=</span> torch.tensor(u0_list,       dtype<span class="o">=</span>torch.float32)
+        self.coords <span class="o">=</span> torch.tensor(coord_list,    dtype<span class="o">=</span>torch.float32)
+        self.sol    <span class="o">=</span> torch.tensor(solution_list, dtype<span class="o">=</span>torch.float32)
 
-    <span class="k">def</span> <span class="n">__len__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="n">sol</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__len__</span>(self):
+        <span class="k">return</span> len(self.sol)
 
-    <span class="k">def</span> <span class="n">__getitem__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">u0</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">self</span><span class="p">.</span><span class="n">coords</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">self</span><span class="p">.</span><span class="n">sol</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-</code></pre>
-
-  <div class="highlight-box">
-    <b>The Chunking Optimization:</b> Instead of passing the whole domain to the trunk network, we split the 819K coordinates into over 20,000 discrete chunks during training. This keeps the VRAM usage flat while allowing the network to sweep across the entire spatiotemporal volume efficiently.
+    <span class="k">def</span> <span class="fm">__getitem__</span>(self, idx):
+        <span class="k">return</span> self.u0[idx], self.coords[idx], self.sol[idx]</code></pre>
   </div>
 
-  <hr>
+  <div class="callout success">
+    <span class="callout-icon">🔧</span>
+    <div class="callout-body">
+      <strong>The Chunking Optimization</strong>
+      <p>Instead of passing the whole domain to the trunk network, we split the 819K coordinates into over 20,000 discrete chunks during training. This keeps the VRAM usage flat while allowing the network to sweep across the entire spatiotemporal volume efficiently.</p>
+    </div>
+  </div>
+</div>
 
-
-<hr>
-
-  <h2> 4. The Crux: Why DeepONet instead of a U-Net?</h2>
+<!-- ───────────────── DeepONet vs UNet ───────────────── -->
+<div id="deeponet-vs-unet" class="container section reveal">
+  <div class="section-label">Section 05</div>
+  <h2>The Crux:<br>Why DeepONet Instead of a U-Net?</h2>
 
   <p>
-    If we are mapping a 2D grid (initial condition) to another 2D grid (future state), you might ask: <i>"Why not just use a standard Image-to-Image network, like a U-Net?"</i>
+    If we are mapping a 2D grid (initial condition) to another 2D grid (future state), you might ask: <em>"Why not just use a standard Image-to-Image network, like a U-Net?"</em>
   </p>
+  <p>
+    Here is the fundamental limitation of standard CNNs: <strong>they are tied to their grid resolution.</strong> If you train a U-Net on $64 \times 64$ images, it learns to map a $64 \times 64$ grid to a $64 \times 64$ grid at a specific, fixed time step. If you later want to query the solution at a sub-pixel location (say, $x=0.123, y=0.456$) or at an arbitrary continuous time step (say, $t=0.78$), the U-Net cannot help you without messy interpolations.
+  </p>
+
+  <div class="comparison-grid">
+    <div class="cmp-card bad">
+      <div class="cmp-label">Standard U-Net</div>
+      <ul class="cmp-list">
+        <li>Tied to training grid resolution</li>
+        <li>Fixed, discrete time steps only</li>
+        <li>Requires interpolation for sub-pixel queries</li>
+        <li>Must retrain for new resolution</li>
+      </ul>
+    </div>
+    <div class="cmp-card good">
+      <div class="cmp-label">DeepONet</div>
+      <ul class="cmp-list">
+        <li>Resolution-invariant inference</li>
+        <li>Continuous floating-point time queries</li>
+        <li>Exact sub-pixel evaluation for free</li>
+        <li>Zero-shot super-resolution</li>
+      </ul>
+    </div>
+  </div>
 
   <p>
-    Here is the fundamental limitation of standard CNNs: <b>They are tied to their grid resolution.</b> If you train a U-Net on $64 \times 64$ images, it learns to map a $64 \times 64$ grid to a $64 \times 64$ grid at a specific, fixed time step. If you later want to query the solution at a sub-pixel location (say, $x=0.123, y=0.456$) or at an arbitrary continuous time step (say, $t=0.78$), the U-Net cannot help you without messy interpolations.
+    <strong>DeepONets represent a paradigm shift: Mesh-Free Operator Learning.</strong>
   </p>
-
-  <p>
-    <b>DeepONets represent a paradigm shift: Mesh-Free Operator Learning.</b> 
-  </p>
-
   <p>
     Instead of predicting a grid of pixels, a DeepONet learns the continuous mathematical function itself. It separates the problem into two distinct questions:
   </p>
   <ol>
-    <li><b>The Branch:</b> "What universe are we in?" (Looking at the initial condition $u_0$).</li>
-    <li><b>The Trunk:</b> "Where exactly are we looking?" (Evaluating the specific coordinates $x, y, t$).</li>
+    <li><strong>The Branch:</strong> "What universe are we in?" (Looking at the initial condition $u_0$).</li>
+    <li><strong>The Trunk:</strong> "Where exactly are we looking?" (Evaluating the specific coordinates $x, y, t$).</li>
   </ol>
   <p>
-    Because the Trunk takes continuous floating-point coordinates as input, the trained model is <i>resolution invariant</i>. You can train it on a coarse $64 \times 64$ grid and evaluate it at a $1024 \times 1024$ resolution entirely for free.
+    Because the Trunk takes continuous floating-point coordinates as input, the trained model is <em>resolution invariant</em>. You can train it on a coarse $64 \times 64$ grid and evaluate it at a $1024 \times 1024$ resolution entirely for free.
   </p>
+</div>
 
-  
-  <h2>5. The Branch Network: The Spatial Encoder</h2>
+<!-- ───────────────── BRANCH ───────────────── -->
+<div id="branch" class="container section reveal">
+  <div class="section-label">Section 06</div>
+  <h2>The Branch Network:<br>The Spatial Encoder</h2>
 
   <p>
-    The Branch network is responsible for "looking" at the initial condition $u_0(x,y)$ and distilling it into a set of latent coefficients. 
+    The Branch network is responsible for "looking" at the initial condition $u_0(x,y)$ and distilling it into a set of latent coefficients.
   </p>
   <p>
     Because the input is a 2D grid, a Multi-Layer Perceptron (MLP) would destroy the spatial relationships between neighboring pixels. Instead, we use a Convolutional Neural Network (CNN). The CNN acts as a feature extractor, looking for the local gradients and peaks that will eventually evolve into shock fronts.
   </p>
   <p>
-    However, the magic happens at the <code>AdaptiveAvgPool2d</code> layer. We aggressively bottleneck the network, compressing the feature maps down to a mere <b>4-dimensional vector</b>. This forces the model to learn the invariant physical properties of the initial condition rather than just memorizing pixel values.
+    However, the magic happens at the <code>AdaptiveAvgPool2d</code> layer. We aggressively bottleneck the network, compressing the feature maps down to a mere <strong>4-dimensional vector</strong>. This forces the model to learn the invariant physical properties of the initial condition rather than just memorizing pixel values.
   </p>
 
-<pre><code class="language-python"><span class="k">class</span> <span class="n">BranchNet</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="n">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">output_dim</span><span class="o">=</span><span class="n">4</span><span class="p">):</span> <span class="c"># 4-dimensional bottleneck</span>
-        <span class="n">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">()</span>
+  <div class="code-wrapper">
+    <div class="code-header">
+      <div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+      <span class="code-lang">python · branch_net.py</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+<pre><code><span class="k">class</span> <span class="nb">BranchNet</span>(nn.Module):
+    <span class="k">def</span> <span class="fm">__init__</span>(self, output_dim<span class="o">=</span><span class="mi">4</span>):  <span class="c"># 4-dimensional bottleneck</span>
+        super().__init__()
         <span class="c"># CNN blocks to extract spatial hierarchies</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">convs</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Sequential</span><span class="p">(</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">1</span><span class="p">,</span> <span class="n">16</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">1</span><span class="p">),</span> <span class="n">nn</span><span class="p">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="p">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">2</span><span class="p">),</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">16</span><span class="p">,</span> <span class="n">32</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">1</span><span class="p">),</span> <span class="n">nn</span><span class="p">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="p">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">2</span><span class="p">),</span>
-        <span class="p">)</span>
-        
+        self.convs <span class="o">=</span> nn.Sequential(
+            nn.Conv2d(<span class="mi">1</span>, <span class="mi">16</span>, kernel_size<span class="o">=</span><span class="mi">3</span>, padding<span class="o">=</span><span class="mi">1</span>), nn.ReLU(), nn.MaxPool2d(<span class="mi">2</span>),
+            nn.Conv2d(<span class="mi">16</span>, <span class="mi">32</span>, kernel_size<span class="o">=</span><span class="mi">3</span>, padding<span class="o">=</span><span class="mi">1</span>), nn.ReLU(), nn.MaxPool2d(<span class="mi">2</span>),
+        )
+
         <span class="c"># Decouples the network from the exact input grid size</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">AdaptiveAvgPool2d</span><span class="p">((</span><span class="n">2</span><span class="p">,</span> <span class="n">2</span><span class="p">))</span>
-        
+        self.pool <span class="o">=</span> nn.AdaptiveAvgPool2d((<span class="mi">2</span>, <span class="mi">2</span>))
+
         <span class="c"># Final projection to the latent basis</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Sequential</span><span class="p">(</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">32</span> <span class="o">*</span> <span class="n">2</span> <span class="o">*</span> <span class="n">2</span><span class="p">,</span> <span class="n">64</span><span class="p">),</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">ReLU</span><span class="p">(),</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">64</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span> 
-        <span class="p">)</span>
+        self.fc <span class="o">=</span> nn.Sequential(
+            nn.Linear(<span class="mi">32</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">2</span>, <span class="mi">64</span>),
+            nn.ReLU(),
+            nn.Linear(<span class="mi">64</span>, output_dim)
+        )
 
-    <span class="k">def</span> <span class="n">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">convs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">self</span><span class="p">.</span><span class="n">pool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</code></pre>
+    <span class="k">def</span> <span class="fm">forward</span>(self, x):
+        x <span class="o">=</span> self.convs(x)
+        x <span class="o">=</span> self.pool(x)
+        x <span class="o">=</span> torch.flatten(x, <span class="mi">1</span>)
+        <span class="k">return</span> self.fc(x)</code></pre>
+  </div>
+</div>
 
-  <hr>
-
-  <h2>6. The Trunk Network: The Coordinate Mapper</h2>
+<!-- ───────────────── TRUNK ───────────────── -->
+<div id="trunk" class="container section reveal">
+  <div class="section-label">Section 07</div>
+  <h2>The Trunk Network:<br>The Coordinate Mapper</h2>
 
   <p>
     The Trunk network is tasked with learning the spatial-temporal basis functions. It takes the continuous coordinates $(x,y,t)$ and maps them to a higher-dimensional space.
   </p>
-
   <p>
-    Notice the activation function: we use <b>Tanh</b> instead of ReLU. A neural network with ReLU activations is piecewise linear, meaning its second derivative is zero everywhere (and undefined at the hinges). Since the Burgers equation relies on a smooth second spatial derivative (the Laplacian $\Delta u$), we must use a smooth, continuously differentiable activation function like Tanh to ensure the learned operator respects the physical continuity of fluid flow. 
+    Notice the activation function: we use <strong>Tanh</strong> instead of ReLU. A neural network with ReLU activations is piecewise linear, meaning its second derivative is zero everywhere (and undefined at the hinges). Since the Burgers equation relies on a smooth second spatial derivative (the Laplacian $\Delta u$), we must use a smooth, continuously differentiable activation function like Tanh to ensure the learned operator respects the physical continuity of fluid flow.
   </p>
 
-  <p>
-    In our optimized runs, we expanded the Trunk to a <b>14-dimensional output</b> to give the coordinate basis enough capacity to represent complex shock geometries.
-  </p>
+  <div class="callout info">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body">
+      <strong>Trunk Dimensionality</strong>
+      <p>In our optimized runs, we expanded the Trunk to a <strong>14-dimensional output</strong> to give the coordinate basis enough capacity to represent complex shock geometries.</p>
+    </div>
+  </div>
 
-<pre><code class="language-python"><span class="k">class</span> <span class="n">TrunkNet</span><span class="p">(</span><span class="n">nn</span><span class="p">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="n">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">input_dim</span><span class="o">=</span><span class="n">3</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="o">=</span><span class="n">128</span><span class="p">,</span> <span class="n">output_dim</span><span class="o">=</span><span class="n">14</span><span class="p">):</span>
-        <span class="n">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">()</span>
-        <span class="n">self</span><span class="p">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">Sequential</span><span class="p">(</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">),</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Tanh</span><span class="p">(),</span> <span class="c"># Smooth activations for continuous physics</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">),</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Tanh</span><span class="p">(),</span>
-            <span class="n">nn</span><span class="p">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span> <span class="c"># Must map to the Trunk basis dimension</span>
-        <span class="p">)</span>
+  <div class="code-wrapper">
+    <div class="code-header">
+      <div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+      <span class="code-lang">python · trunk_net.py</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+<pre><code><span class="k">class</span> <span class="nb">TrunkNet</span>(nn.Module):
+    <span class="k">def</span> <span class="fm">__init__</span>(self, input_dim<span class="o">=</span><span class="mi">3</span>, hidden_dim<span class="o">=</span><span class="mi">128</span>, output_dim<span class="o">=</span><span class="mi">14</span>):
+        super().__init__()
+        self.net <span class="o">=</span> nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.Tanh(),    <span class="c"># Smooth activations for continuous physics</span>
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.Tanh(),
+            nn.Linear(hidden_dim, output_dim)  <span class="c"># Must map to the Trunk basis dimension</span>
+        )
 
-    <span class="k">def</span> <span class="n">forward</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">net</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
-</code></pre>
+    <span class="k">def</span> <span class="fm">forward</span>(self, coords):
+        <span class="k">return</span> self.net(coords)</code></pre>
+  </div>
+</div>
 
-  <hr>
-<h3>Resolving the Dimensional Mismatch</h3>
-  <p>
-    A standard DeepONet requires the Branch and Trunk to output the exact same latent dimension $p$ to compute the dot product. However, we deliberately bottlenecked our spatial branch to 4 dimensions to force feature invariance, while allowing the trunk 14 dimensions to express complex spatiotemporal basis functions. 
-  </p>
-  <p>
-    To resolve this mathematically before the forward pass, we... <i>[Explain your exact PyTorch mechanism here: e.g., "introduced a final projection layer `nn.Linear(4, 14)` to expand the spatial coefficients into the trunk's basis space, ensuring dimensional alignment while preserving the rigorous bottleneck."]</i>
-  </p>
-
-
-
- <h2>The DeepONet Forward Pass: Learning a Nonlinear Resolvent</h2>
-
-  <p>
-    Why does the final prediction rely on a simple dot product $u(x,y,t) = b \cdot t$? This architectural choice is deeply rooted in functional analysis. 
-  </p>
-  
-  <p>
-    For linear PDEs, we can find solutions by convolving the initial condition with a global integral kernel, known as a <b>Green's Function</b> ($G$). The continuous solution looks like $u(x,t) = \int G(x,y,t) u_0(y) dy$. While the Burgers equation is strictly nonlinear (meaning no pure Green's function exists), the DeepONet mimics this process by learning a generalized, data-driven non-linear resolvent operator.
-  </p>
+<!-- ───────────────── FORWARD PASS ───────────────── -->
+<div id="forward" class="container section reveal">
+  <div class="section-label">Section 08</div>
+  <h2>The DeepONet Forward Pass:<br>Learning a Nonlinear Resolvent</h2>
 
   <p>
-    The Trunk network acts as a set of learned spectral basis functions—a bespoke coordinate system tailored to fluid shocks. The Branch network outputs the projection coefficients, determining how much of each basis function is required to construct the specific wave defined by $u_0$.
+    Why does the final prediction rely on a simple dot product $u(x,y,t) = b \cdot t$? This architectural choice is deeply rooted in functional analysis.
   </p>
+  <p>
+    For linear PDEs, we can find solutions by convolving the initial condition with a global integral kernel, known as a <strong>Green's Function</strong> ($G$). The continuous solution looks like $u(x,t) = \int G(x,y,t) u_0(y) dy$. While the Burgers equation is strictly nonlinear (meaning no pure Green's function exists), the DeepONet mimics this process by learning a generalized, data-driven non-linear resolvent operator.
+  </p>
+
+  <!-- Architecture diagram -->
+  <div class="arch-diagram">
+    <div class="arch-row">
+      <div class="arch-node accent">
+        <div class="an-label">Input</div>
+        <div class="an-val">u₀(x,y)</div>
+      </div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-node accent">
+        <div class="an-label">Branch (CNN)</div>
+        <div class="an-val">[B, 4]</div>
+      </div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-node orange">
+        <div class="an-label">Projection</div>
+        <div class="an-val">ℝ⁴ → ℝ¹⁴</div>
+      </div>
+    </div>
+    <div class="arch-row" style="margin-bottom:0">
+      <div class="arch-node purple">
+        <div class="an-label">Trunk (MLP)</div>
+        <div class="an-val">[B, N, 14]</div>
+      </div>
+      <span class="arch-arrow">←</span>
+      <div class="arch-node purple">
+        <div class="an-label">Query Coords</div>
+        <div class="an-val">(x, y, t)</div>
+      </div>
+    </div>
+    <div class="arch-row">
+      <div style="text-align:center; color:var(--text-dim); font-size:13px; width:100%">
+        <span style="display:inline-block; padding:8px 16px; background:var(--surface); border:1px solid var(--border2); border-radius:8px;">
+          ⟨branch, trunk⟩ · dot product → u_pred
+        </span>
+      </div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-node green">
+        <div class="an-label">Output</div>
+        <div class="an-val">u(x,y,t)</div>
+      </div>
+    </div>
+  </div>
 
   <h3>Resolving the Dimensional Mismatch</h3>
   <p>
     A mathematical prerequisite for the dot product is that the Branch and Trunk must output the exact same latent dimension size ($p$). However, we deliberately bottlenecked our spatial Branch to 4 dimensions to force feature invariance, while granting the Trunk 14 dimensions to express complex spatiotemporal basis functions.
   </p>
-  
   <p>
     To resolve this, we utilize a linear projection matrix to expand the 4-dimensional spatial coefficients into the 14-dimensional basis space prior to the inner product:
   </p>
 
-<pre><code class="language-python">class DeepONet(nn.Module):
-    def __init__(self, branch, trunk):
+  <div class="code-wrapper">
+    <div class="code-header">
+      <div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+      <span class="code-lang">python · deeponet.py</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+<pre><code><span class="k">class</span> <span class="nb">DeepONet</span>(nn.Module):
+    <span class="k">def</span> <span class="fm">__init__</span>(self, branch, trunk):
         super().__init__()
-        self.branch = branch
-        self.trunk = trunk
-        # The crucial projection matrix mapping R^4 -> R^14
-        self.align_dims = nn.Linear(4, 14)
+        self.branch <span class="o">=</span> branch
+        self.trunk  <span class="o">=</span> trunk
+        <span class="c"># The crucial projection matrix mapping ℝ⁴ → ℝ¹⁴</span>
+        self.align_dims <span class="o">=</span> nn.Linear(<span class="mi">4</span>, <span class="mi">14</span>)
 
-    def forward(self, u0, coords):
-        # b shape: (batch_size, 4)
-        b_raw = self.branch(u0) 
-        
-        # Project to match trunk capacity: (batch_size, 14)
-        b_aligned = self.align_dims(b_raw)
-        
-        # t shape: (batch_size, num_points, 14)
-        t = self.trunk(coords) 
-        
-        b_aligned = b_aligned.unsqueeze(1) 
-        
-        # Inner product across the p=14 latent space
-        pred = torch. torch.sum(b_aligned * t, dim=-1, keepdim=True)
-        return pred
-</code></pre>
+    <span class="k">def</span> <span class="fm">forward</span>(self, u0, coords):
+        <span class="c"># b shape: (batch_size, 4)</span>
+        b_raw <span class="o">=</span> self.branch(u0)
 
+        <span class="c"># Project to match trunk capacity: (batch_size, 14)</span>
+        b_aligned <span class="o">=</span> self.align_dims(b_raw)
 
-<h3>Shape Sanity Check: Tracing the Tensors</h3>
+        <span class="c"># t shape: (batch_size, num_points, 14)</span>
+        t <span class="o">=</span> self.trunk(coords)
+
+        b_aligned <span class="o">=</span> b_aligned.unsqueeze(<span class="mi">1</span>)
+
+        <span class="c"># Inner product across the p=14 latent space</span>
+        pred <span class="o">=</span> torch.sum(b_aligned <span class="o">*</span> t, dim<span class="o">=-</span><span class="mi">1</span>, keepdim<span class="o">=</span><span class="k">True</span>)
+        <span class="k">return</span> pred</code></pre>
+  </div>
+
+  <h3>Shape Sanity Check: Tracing the Tensors</h3>
   <p>
-    To truly understand the DeepONet forward pass, let's trace a single batch through the network. Imagine we have a batch size of <code>B = 32</code>, evaluating <code>N = 1000</code> random spatiotemporal points per batch.
+    To truly understand the DeepONet forward pass, let's trace a single batch through the network with batch size <code>B = 32</code> and <code>N = 1000</code> random spatiotemporal points per batch.
   </p>
 
-  <pre><code><span class="c"># 1. The Branch Input</span>
-u0.shape      <span class="c"># -> [32, 1, 64, 64] (Batch of 32 initial conditions)</span>
-branch_out    <span class="c"># -> [32, 4]         (Compressed to 4 latent coefficients per sample)</span>
+  <div class="code-wrapper">
+    <div class="code-header">
+      <div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+      <span class="code-lang">tensor shapes · shape trace</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+<pre><code><span class="c"># 1. The Branch Input</span>
+u0.shape      <span class="c"># → [32, 1, 64, 64]  Batch of 32 initial conditions</span>
+branch_out    <span class="c"># → [32, 4]          Compressed to 4 latent coefficients per sample</span>
 
 <span class="c"># 2. The Trunk Input</span>
-coords.shape  <span class="c"># -> [32, 1000, 3]   (32 batches, 1000 points each, 3 dims: x, y, t)</span>
-trunk_out     <span class="c"># -> [32, 1000, 14]  (Mapped to 14 basis functions per point)</span>
+coords.shape  <span class="c"># → [32, 1000, 3]    32 batches, 1000 points each, 3 dims: x, y, t</span>
+trunk_out     <span class="c"># → [32, 1000, 14]   Mapped to 14 basis functions per point</span>
 
-<span class="c"># 3. The Alignment (The tricky part)</span>
-<span class="c"># We cannot dot-product a [32, 4] tensor with a [32, 1000, 14] tensor directly.</span>
-<span class="c"># This is why we bottlenecked the Branch to 4, but our Trunk outputs 14. </span>
-<span class="c"># Wait, we need them to match! </span>
+<span class="c"># 3. The Alignment</span>
+<span class="c"># Cannot dot-product a [32, 4] tensor with a [32, 1000, 14] tensor directly.</span>
+<span class="c"># Linear projection expands the branch coefficients to match trunk dimension.</span>
+b_aligned <span class="o">=</span> align_dims(b_raw)          <span class="c"># → [32, 14]</span>
+b_aligned <span class="o">=</span> b_aligned.unsqueeze(<span class="mi">1</span>)    <span class="c"># → [32, 1, 14]</span>
 
-<span class="c"># *Correction for implementation:* Both Branch and Trunk MUST output the same </span>
-<span class="c"># latent dimension `p`. Let's assume we set both to p=14.</span>
-branch_out = branch_out.unsqueeze(1)  <span class="c"># -> [32, 1, 14]</span>
+<span class="c"># 4. The Dot Product — PyTorch broadcasts across the 1000 points.</span>
+pred <span class="o">=</span> torch.sum(b_aligned <span class="o">*</span> trunk_out, dim<span class="o">=-</span><span class="mi">1</span>)  <span class="c"># → [32, 1000]</span></code></pre>
+  </div>
+</div>
 
-<span class="c"># 4. The Dot Product</span>
-<span class="c"># PyTorch broadcasts the Branch output across the 1000 points.</span>
-pred = torch.sum(branch_out * trunk_out, dim=-1) <span class="c"># -> [32, 1000]</span>
-</code></pre>
-
-  <p>
-    <em>(Note: In architecture design, the final output dimension of the Branch <code>output_dim</code> and the Trunk <code>output_dim</code> must be identical—often referred to as $p$. If your Branch outputs 4 and your Trunk outputs 14, the dot product will fail. In our optimal setup, we align them both to a shared latent space size.)</em>
-  </p>
-
-
-
-  
-  <hr>
-
-  <h2>8. The Training Loop: Minimizing the Residuals</h2>
+<!-- ───────────────── TRAINING ───────────────── -->
+<div id="training" class="container section reveal">
+  <div class="section-label">Section 09</div>
+  <h2>The Training Loop:<br>Minimizing the Residuals</h2>
 
   <p>
-    Training a DeepONet is fundamentally a regression problem. We use the <b>Adam optimizer</b> to minimize the Mean Squared Error (MSE) between our network's continuous prediction and the discrete ground truth data generated by our FDM solver.
+    Training a DeepONet is fundamentally a regression problem. We use the <strong>Adam optimizer</strong> to minimize the Mean Squared Error (MSE) between our network's continuous prediction and the discrete ground truth data generated by our FDM solver.
   </p>
 
-<pre><code class="language-python"><span class="c"># Initialize model, optimizer, and loss function</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">DeepONet</span><span class="p">(</span><span class="n">BranchNet</span><span class="p">(),</span> <span class="n">TrunkNet</span><span class="p">()).</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="p">.</span><span class="n">optim</span><span class="p">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="p">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
-<span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="p">.</span><span class="n">MSELoss</span><span class="p">()</span>
+  <div class="code-wrapper">
+    <div class="code-header">
+      <div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+      <span class="code-lang">python · train.py</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+<pre><code><span class="c"># Initialize model, optimizer, and loss function</span>
+model     <span class="o">=</span> DeepONet(BranchNet(), TrunkNet()).to(device)
+optimizer <span class="o">=</span> torch.optim.Adam(model.parameters(), lr<span class="o">=</span><span class="mi">1e-3</span>)
+criterion <span class="o">=</span> nn.MSELoss()
 
 <span class="c"># The Training Loop</span>
-<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_epochs</span><span class="p">):</span>
-    <span class="n">model</span><span class="p">.</span><span class="n">train</span><span class="p">()</span>
-    <span class="n">total_loss</span> <span class="o">=</span> <span class="n">0</span>
-    
-    <span class="k">for</span> <span class="n">u0_batch</span><span class="p">,</span> <span class="n">coord_batch</span><span class="p">,</span> <span class="n">true_batch</span> <span class="ow">in</span> <span class="n">train_loader</span><span class="p">:</span>
-        <span class="n">u0_batch</span><span class="p">,</span> <span class="n">coord_batch</span><span class="p">,</span> <span class="n">true_batch</span> <span class="o">=</span> <span class="n">u0_batch</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">coord_batch</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span> <span class="n">true_batch</span><span class="p">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-        
+<span class="k">for</span> epoch <span class="k">in</span> range(num_epochs):
+    model.train()
+    total_loss <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> u0_batch, coord_batch, true_batch <span class="k">in</span> train_loader:
+        u0_batch, coord_batch, true_batch <span class="o">=</span> (
+            u0_batch.to(device),
+            coord_batch.to(device),
+            true_batch.to(device)
+        )
+
         <span class="c"># Forward Pass</span>
-        <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">u0_batch</span><span class="p">,</span> <span class="n">coord_batch</span><span class="p">).</span><span class="n">squeeze</span><span class="p">()</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">true_batch</span><span class="p">)</span>
-        
+        pred <span class="o">=</span> model(u0_batch, coord_batch).squeeze()
+        loss <span class="o">=</span> criterion(pred, true_batch)
+
         <span class="c"># Backpropagation</span>
-        <span class="n">optimizer</span><span class="p">.</span><span class="n">zero_grad</span><span class="p">()</span>
-        <span class="n">loss</span><span class="p">.</span><span class="n">backward</span><span class="p">()</span>
-        <span class="n">optimizer</span><span class="p">.</span><span class="n">step</span><span class="p">()</span>
-        
-        <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="p">.</span><span class="n">item</span><span class="p">()</span>
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-    <span class="k">if</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="n">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">50</span> <span class="o">==</span> <span class="n">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s">f"Epoch {epoch+1} | MSE Loss: {total_loss/len(train_loader):.6f}"</span><span class="p">)</span>
-</code></pre>
+        total_loss <span class="o">+=</span> loss.item()
 
-  <hr>
+    <span class="k">if</span> (epoch <span class="o">+</span> <span class="mi">1</span>) <span class="o">%</span> <span class="mi">50</span> <span class="o">==</span> <span class="mi">0</span>:
+        print(<span class="s">f"Epoch {epoch+1} | MSE Loss: {total_loss/len(train_loader):.6f}"</span>)</code></pre>
+  </div>
+</div>
 
-  <h2>9. Training Dynamics and Results</h2>
+<!-- ───────────────── RESULTS ───────────────── -->
+<div id="results" class="container section reveal">
+  <div class="section-label">Section 10</div>
+  <h2>Training Dynamics &amp; Results</h2>
 
-
-
-<hr>
-<h3>Evaluation: Relative $L_2$ Error and Generalization</h3>
+  <h3>Evaluation: Relative $L_2$ Error</h3>
   <p>
     While we optimized using MSE, the true benchmark for neural operators is the Relative $L_2$ Error, defined as:
   </p>
   <div class="math-block">
     $$ \mathcal{E} = \frac{||u_{pred} - u_{true}||_2}{||u_{true}||_2} $$
   </div>
-  <p>
-    Our model achieved a test error of [Insert relative L2 % here]. Crucially, this evaluation was performed on <b>[state your test set: e.g., 500 entirely unseen initial condition functions / future time steps beyond the training horizon]</b>. This confirms the network learned a generalized continuous operator $\mathcal{G}$, rather than simply memorizing the trajectories of the training set.
-  </p> 
 
-  <hr>
-  <h3>9.1 Watching the Loss: A Log of the Training Dynamics</h2>
-
+  <h3>Watching the Loss: Terminal Training Log</h3>
   <p>
     When training neural operators, watching the loss drop is deeply satisfying, but it also provides critical insight into the health of the model. Here is an excerpt from the actual terminal output of our optimized training run:
   </p>
 
-<pre><code class="language-plaintext">Moving trunk tensor to cuda...
-Training with trunk subsampling: 16384 / 819200 points per step
-Validation will use 50,000 random points (different each epoch)
-Starting training...
+  <div class="log-wrapper">
+    <div class="log-header">
+      <div class="log-title">
+        <span class="log-status"></span>
+        training_run · CUDA · 2000 epochs
+      </div>
+      <span style="font-size:11px; font-family:'DM Mono',monospace; color:var(--text-dim)">Best: 0.004739</span>
+    </div>
+    <div class="log-body">
+      <div class="log-line log-dim">Moving trunk tensor to cuda...</div>
+      <div class="log-line log-dim">Training with trunk subsampling: 16384 / 819200 points per step</div>
+      <div class="log-line log-dim">Validation will use 50,000 random points (different each epoch)</div>
+      <div class="log-line log-dim">Starting training...</div>
+      <div class="log-line">&nbsp;</div>
+      <div class="log-line log-dim">First batch debug:</div>
+      <div class="log-line log-dim">&nbsp;&nbsp;u0_batch shape: torch.Size([16, 64, 64]), requires_grad: False</div>
+      <div class="log-line log-dim">&nbsp;&nbsp;trunk_batch shape: torch.Size([16384, 3]), requires_grad: False</div>
+      <div class="log-line log-dim">&nbsp;&nbsp;Model training mode: True</div>
+      <div class="log-line log-dim">&nbsp;&nbsp;u_pred shape: torch.Size([16, 16384]), requires_grad: True</div>
+      <div class="log-line">&nbsp;</div>
+      <div class="log-line"><span class="log-epoch">Epoch [   1/2000]</span> | <span class="log-train">Train: 0.281394</span> | <span class="log-test">Test: 0.210911</span> | <span class="log-lr">LR: 3.00e-04</span> | <span class="log-time">6.0s</span></div>
+      <div class="log-line"><span class="log-epoch">Epoch [  50/2000]</span> | <span class="log-train">Train: 0.039335</span> | <span class="log-test">Test: 0.040047</span> | <span class="log-lr">LR: 3.00e-04</span> | <span class="log-time">290.0s</span></div>
+      <div class="log-line"><span class="log-epoch">Epoch [ 100/2000]</span> | <span class="log-train">Train: 0.029351</span> | <span class="log-test">Test: 0.027826</span> | <span class="log-lr">LR: 3.00e-04</span> | <span class="log-time">578.8s</span></div>
+      <div class="log-line"><span class="log-epoch">Epoch [ 200/2000]</span> | <span class="log-train">Train: 0.024014</span> | <span class="log-test">Test: 0.023008</span> | <span class="log-lr">LR: 3.00e-04</span> | <span class="log-time">1159.6s</span></div>
+      <div class="log-line"><span class="log-epoch">Epoch [ 300/2000]</span> | <span class="log-train">Train: 0.019085</span> | <span class="log-test">Test: 0.019304</span> | <span class="log-lr">LR: 3.00e-04</span> | <span class="log-time">1735.5s</span></div>
+      <div class="log-line"><span class="log-epoch">Epoch [ 390/2000]</span> | <span class="log-train">Train: 0.010346</span> | <span class="log-test">Test: 0.010833</span> | <span class="log-lr">LR: 1.50e-04</span> | <span class="log-time">2251.5s</span></div>
+      <div class="log-line"><span class="log-epoch">Epoch [ 500/2000]</span> | <span class="log-train">Train: 0.007956</span> | <span class="log-test">Test: 0.008248</span> | <span class="log-lr">LR: 7.50e-05</span> | <span class="log-time">2880.9s</span></div>
+      <div class="log-line"><span class="log-epoch">Epoch [ 680/2000]</span> | <span class="log-train">Train: 0.005950</span> | <span class="log-test">Test: 0.006208</span> | <span class="log-lr">LR: 3.75e-05</span> | <span class="log-time">3910.3s</span></div>
+      <div class="log-line"><span class="log-epoch">Epoch [ 900/2000]</span> | <span class="log-train">Train: 0.004581</span> | <span class="log-test">Test: 0.005168</span> | <span class="log-lr">LR: 9.37e-06</span> | <span class="log-time">5171.1s</span></div>
+      <div class="log-line"><span class="log-epoch">Epoch [1500/2000]</span> | <span class="log-train">Train: 0.004107</span> | <span class="log-test">Test: 0.004827</span> | <span class="log-lr">LR: 1.83e-08</span> | <span class="log-time">8626.3s</span></div>
+      <div class="log-line"><span class="log-epoch">Epoch [2000/2000]</span> | <span class="log-train">Train: 0.004107</span> | <span class="log-test">Test: 0.004782</span> | <span class="log-lr">LR: 1.83e-08</span> | <span class="log-time">11499.2s</span></div>
+      <div class="log-line">&nbsp;</div>
+      <div class="log-line log-dim">Training completed in 11499.2 seconds (191.7 minutes)</div>
+      <div class="log-line log-highlight">Best test loss: 0.004739</div>
+    </div>
+  </div>
 
-First batch debug:
-  u0_batch shape: torch.Size([16, 64, 64]), requires_grad: False
-  trunk_batch shape: torch.Size([16384, 3]), requires_grad: False
-  Model training mode: True
-  u_pred shape: torch.Size([16, 16384]), requires_grad: True
-
-Epoch [   1/2000] | Train Loss: 0.281394 | Test Loss: 0.210911 | LR: 3.00e-04 | Time: 6.0s
-Epoch [  50/2000] | Train Loss: 0.039335 | Test Loss: 0.040047 | LR: 3.00e-04 | Time: 290.0s
-Epoch [ 100/2000] | Train Loss: 0.029351 | Test Loss: 0.027826 | LR: 3.00e-04 | Time: 578.8s
-Epoch [ 200/2000] | Train Loss: 0.024014 | Test Loss: 0.023008 | LR: 3.00e-04 | Time: 1159.6s
-Epoch [ 300/2000] | Train Loss: 0.019085 | Test Loss: 0.019304 | LR: 3.00e-04 | Time: 1735.5s
-Epoch [ 390/2000] | Train Loss: 0.010346 | Test Loss: 0.010833 | LR: 1.50e-04 | Time: 2251.5s
-Epoch [ 500/2000] | Train Loss: 0.007956 | Test Loss: 0.008248 | LR: 7.50e-05 | Time: 2880.9s
-Epoch [ 680/2000] | Train Loss: 0.005950 | Test Loss: 0.006208 | LR: 3.75e-05 | Time: 3910.3s
-Epoch [ 900/2000] | Train Loss: 0.004581 | Test Loss: 0.005168 | LR: 9.37e-06 | Time: 5171.1s
-Epoch [1500/2000] | Train Loss: 0.004107 | Test Loss: 0.004827 | LR: 1.83e-08 | Time: 8626.3s
-Epoch [2000/2000] | Train Loss: 0.004107 | Test Loss: 0.004782 | LR: 1.83e-08 | Time: 11499.2s
-
-Training completed in 11499.2 seconds (191.7 minutes)
-Best test loss: 0.004739</code></pre>
-
-  <h3>9.2 Interpreting the Logs</h3>
+  <h3>Interpreting the Logs</h3>
   <p>
     This log tells a fascinating story of network optimization. Right at the top, you can see our "chunking" strategy in action: the network is subsampling $16,384$ coordinates out of the total $819,200$ spatiotemporal points per step. This specific sub-sampling prevents VRAM exhaustion while still providing a statistically significant gradient for the Adam optimizer.
   </p>
@@ -685,55 +1358,43 @@ Best test loss: 0.004739</code></pre>
     Notice the aggressive initial drop: the loss plummets from $0.281$ to $0.039$ in just 50 epochs. This represents the DeepONet quickly learning the trivial parts of the physical domain—the smooth, laminar flows where diffusion dominates.
   </p>
   <p>
-    However, the true challenge lies in the long tail of the training. Around epoch 390, a learning rate scheduler automatically cuts the learning rate in half (from $3.00e-04$ to $1.50e-04$). The network is now fine-tuning. This prolonged phase, dragging the loss from $0.010$ down to the final $0.0041$ (and a test loss of $0.0047$), is where the network is fighting the convection term. It is meticulously adjusting the 14 basis functions to accurately model the infinitely steep gradients of the shock fronts without triggering artificial oscillations. The incredibly tight coupling between the training and test loss throughout the 3-hour run confirms that the bottlenecked branch network successfully prevented overfitting.
+    However, the true challenge lies in the long tail of the training. Around epoch 390, a learning rate scheduler automatically cuts the learning rate in half (from $3.00\times10^{-4}$ to $1.50\times10^{-4}$). This prolonged phase, dragging the loss from $0.010$ down to the final $0.0041$ (and a test loss of $0.0047$), is where the network is fighting the convection term—meticulously adjusting the 14 basis functions to accurately model the infinitely steep gradients of the shock fronts without triggering artificial oscillations. The incredibly tight coupling between the training and test loss confirms the bottlenecked branch network successfully prevented overfitting.
   </p>
 
-
-<hr>
-
-  <h2>Evaluation: Relative $L_2$ Norm and Zero-Shot Super-Resolution</h2>
-
-  <p>
-    In SciML, Mean Squared Error (MSE) is scale-dependent and insufficient for benchmarking. The rigorous standard for evaluating PDE surrogate models is the <b>Relative $L_2$ Error Norm</b>:
-  </p>
-
-  <div class="math-block">
-    $$ \mathcal{E} = \frac{||u_{pred} - u_{true}||_2}{||u_{true}||_2} $$
+  <div class="callout purple">
+    <span class="callout-icon">🔬</span>
+    <div class="callout-body">
+      <strong>Zero-Shot Super-Resolution</strong>
+      <p>Because the Trunk network accepts continuous floating-point coordinates $(x,y,t)$, the model is entirely mesh-free during inference. We trained on a coarse $64 \times 64$ grid, but can query at $256 \times 256$ or at arbitrary time steps like $t=0.31415$ — without retraining. The operator intrinsically interpolates the physics with analytical smoothness.</p>
+    </div>
   </div>
+</div>
+
+<!-- ───────────────── VISUALIZATIONS ───────────────── -->
+<div id="viz" class="container section reveal">
+  <div class="section-label">Section 11</div>
+  <h2>Visualizing the Operator's Perception</h2>
 
   <p>
-    Our model achieved remarkable relative error convergence across thousands of <i>unseen</i> test initial conditions. But the most profound advantage of learning the continuous operator $\mathcal{G}$ rather than a discrete pixel-mapping is <b>Zero-Shot Super-Resolution</b>.
+    In Scientific Machine Learning (SciML), we don't just care about minimizing a loss function; we need to verify that the model has internalized the continuous physics of the system. Visualizing the continuous operator's prediction against the ground truth finite-difference solver is essential for building trust in the surrogate model.
   </p>
-
   <p>
-    Because the Trunk network accepts continuous floating-point coordinates $(x,y,t)$, the model is entirely mesh-free during inference. We trained the model on data sampled from a coarse $64 \times 64$ spatial grid. However, without retraining, we can query the Trunk at a $256 \times 256$ spatial resolution, or at arbitrary floating-point time steps like $t=0.31415$. The operator intrinsically interpolates the physics with analytical smoothness, a feat impossible for standard U-Net architectures.
+    Here, we analyze three key figures that expose the DeepONet's strengths and limitations, providing direct physical and mathematical inferences about its solution of the Burgers equation.
   </p>
 
-
-
- <hr>
-
-  <h2>10. Visualizing the Operator's Perception</h2>
-
-  <p>
-    In Scientific Machine Learning (SciML), we don't just care about minimizing a loss function; we need to verify that the model has internalized the continuous physics of the system. Visualizing the continuous operator's prediction against the ground truth finite-difference solver is essential for building trust in the surrogate model. 
-  </p>
-
-  <p>
-    Here, we analyze three key figures that expose the DeepONet's strengths and its limitations, providing direct physical and mathematical inferences about its solution of the Burgers equation.
-  </p>
-
-  <div class="figure-container">
-    <h3>Figure 1: Full Spatiotemporal Continuous Prediction vs. Ground Truth</h3>
-    <img src="fig1.png" alt="DeepONet prediction comparison over time" />
-    <div class="image-caption">Figure 1: A 4x4 grid comparing the ground truth numerical solver (top rows) and the continuous DeepONet prediction (bottom rows) across multiple time snapshots.</div>
-    
-    <div class="figure-explanation">
+  <!-- Figure 1 -->
+  <div class="figure-block">
+    <div class="figure-header">
+      <span class="figure-num">FIG 01</span>
+      <h3>Full Spatiotemporal Continuous Prediction vs. Ground Truth</h3>
+    </div>
+    <div class="figure-img-area">
+      <img src="fig1.png" alt="DeepONet prediction comparison over time" onerror="this.parentElement.innerHTML='<div class=\'figure-placeholder\'><div class=\'ph-icon\'>📊</div><p>fig1.png — place your image in the same directory</p></div>'"/>
+    </div>
+    <div class="figure-caption">Figure 1: A 4×4 grid comparing the ground truth numerical solver (top rows) and the continuous DeepONet prediction (bottom rows) across multiple time snapshots.</div>
+    <div class="figure-body">
       <p>
-        The true power of the operator learning paradigm is vividly displayed in this temporal evolution. Traditional numerical solvers must march forward iteratively—calculating $t=0.01$, then $t=0.02$, and so on—bound strictly by the Courant–Friedrichs–Lewy (CFL) stability condition to ensure the math doesn't explode. 
-      </p>
-      <p>
-        Our DeepONet, however, has bypassed this temporal bottleneck entirely. By evaluating the continuous coordinate basis functions generated by our 14-dimensional Trunk network, the model instantly queries the exact fluid state at $t=0.8$ without ever computing the intermediate steps. 
+        The true power of the operator learning paradigm is vividly displayed in this temporal evolution. Traditional numerical solvers must march forward iteratively—calculating $t=0.01$, then $t=0.02$, and so on—bound strictly by the Courant–Friedrichs–Lewy (CFL) stability condition. Our DeepONet has bypassed this temporal bottleneck entirely. By evaluating the continuous coordinate basis functions generated by our 14-dimensional Trunk network, the model instantly queries the exact fluid state at $t=0.8$ without ever computing the intermediate steps.
       </p>
       <p>
         Physically, we can observe the nonlinear convection term ($u \cdot \nabla u$) in action. The initial smooth, sinusoidal hills of the velocity field ($u_0$) are visibly pushed by their own momentum, causing the wave fronts to steepen as time progresses. The DeepONet accurately captures this macro-scale fluid migration. The fact that the network's output remains stable and smooth across these snapshots proves that our carefully chosen 4-dimensional Branch bottleneck forced the network to learn the fundamental wave invariants, rather than simply memorizing the training grid.
@@ -741,48 +1402,57 @@ Best test loss: 0.004739</code></pre>
     </div>
   </div>
 
-  <div class="figure-container">
-    <h3>Figure 2: Absolute Error Maps and the Spectral Bias</h3>
-    <img src="fig2.png" alt="Absolute error maps showing higher error at shock fronts" />
-    <div class="image-caption">Figure 2: Heatmaps visualizing the local absolute error $\lvert u_{true} - u_{pred} \rvert$. Darker backgrounds indicate zero error, while bright zones highlight localized spatial discrepancies.</div>
-    
-    <div class="figure-explanation">
+  <!-- Figure 2 -->
+  <div class="figure-block reveal">
+    <div class="figure-header">
+      <span class="figure-num">FIG 02</span>
+      <h3>Absolute Error Maps and the Spectral Bias</h3>
+    </div>
+    <div class="figure-img-area">
+      <img src="fig2.png" alt="Absolute error maps showing higher error at shock fronts" onerror="this.parentElement.innerHTML='<div class=\'figure-placeholder\'><div class=\'ph-icon\'>🔥</div><p>fig2.png — place your image in the same directory</p></div>'"/>
+    </div>
+    <div class="figure-caption">Figure 2: Heatmaps visualizing the local absolute error $|u_{true} - u_{pred}|$. Darker regions indicate near-zero error; bright zones highlight localized discrepancies at shock fronts.</div>
+    <div class="figure-body">
       <p>
-        This error map is perhaps the most mathematically revealing visualization in the entire project. In machine learning, we often celebrate a low global MSE (like our final $0.0047$ test loss) and move on. But looking at the spatial distribution of that error tells a profound physical story. 
+        This error map is perhaps the most mathematically revealing visualization in the entire project. A low global MSE (like our final $0.0047$ test loss) can be misleading—looking at the spatial distribution tells a much richer story.
       </p>
       <p>
-        Notice that the vast majority of the 2D spatial domain is effectively black; the network's prediction is nearly flawless in the smooth, laminar regions of the fluid. The error spikes <em>exclusively</em> along thin, distinct geometric lines. These lines correspond exactly to the shock fronts—the regions where the fluid velocity gradient ($\nabla u$) is maximized. 
+        Notice that the vast majority of the 2D spatial domain is effectively black; the network's prediction is nearly flawless in the smooth, laminar regions of the fluid. The error spikes <em>exclusively</em> along thin, distinct geometric lines. These lines correspond exactly to the shock fronts—the regions where the fluid velocity gradient ($\nabla u$) is maximized.
       </p>
       <p>
-        This perfectly illustrates a known phenomenon in neural networks called "spectral bias." Neural networks naturally prefer to learn low-frequency, smooth, continuous functions. However, the convective physics of the Burgers equation constantly attempts to create a singularity (a discontinuous vertical drop), which is only barely held back by the viscous diffusion term ($\nu \Delta u$). The DeepONet is struggling exactly where the underlying physics becomes mathematically hostile. Despite this localized strain, the continuous, differentiable nature of our Tanh trunk activations prevents the severe, ringing oscillations (Gibbs phenomenon) that often plague traditional spectral methods at shock boundaries.
+        This perfectly illustrates spectral bias in neural networks. Despite this localized strain, the continuous, differentiable nature of our Tanh trunk activations prevents the severe ringing oscillations (Gibbs phenomenon) that often plague traditional spectral methods at shock boundaries.
       </p>
     </div>
   </div>
 
-  <div class="figure-container">
-    <h3>Figure 3: Wave Steepening and Cross-Sectional Dynamics</h3>
-    <img src="fig3.png" alt="Visualization of wave steepening cross-sections" />
-    <div class="image-caption">Figure 3: Cross-sectional profiles of the velocity field highlighting the physical formation of the shock front against the model's continuous approximation.</div>
-    
-    <div class="figure-explanation">
+  <!-- Figure 3 -->
+  <div class="figure-block reveal">
+    <div class="figure-header">
+      <span class="figure-num">FIG 03</span>
+      <h3>Wave Steepening and Cross-Sectional Dynamics</h3>
+    </div>
+    <div class="figure-img-area">
+      <img src="fig3.png" alt="Visualization of wave steepening cross-sections" onerror="this.parentElement.innerHTML='<div class=\'figure-placeholder\'><div class=\'ph-icon\'>〰️</div><p>fig3.png — place your image in the same directory</p></div>'"/>
+    </div>
+    <div class="figure-caption">Figure 3: Cross-sectional profiles of the velocity field highlighting the physical formation of the shock front against the model's continuous approximation.</div>
+    <div class="figure-body">
       <p>
-        While 2D heatmaps are excellent for global context, observing a 1D cross-section of the fluid surface over time provides the clearest intuition for the tension inside the Burgers equation. Initially, the velocity profile resembles a gentle, symmetric sine wave. But because fluid moving at higher velocities catches up to fluid moving at lower velocities, the crest of the wave leans forward. 
+        While 2D heatmaps are excellent for global context, observing a 1D cross-section of the fluid surface over time provides the clearest intuition for the tension inside the Burgers equation. Initially, the velocity profile resembles a gentle, symmetric sine wave. But because fluid moving at higher velocities catches up to fluid moving at lower velocities, the crest of the wave leans forward.
       </p>
       <p>
-        Mathematically, this translates to the characteristics of the PDE intersecting. In an inviscid fluid ($\nu = 0$), this would result in a multi-valued, physically impossible solution (wave breaking). In our viscous model, the Laplacian smoothing kicks in just in time to create a steep, but continuous, "sawtooth" profile. 
+        Mathematically, this translates to the characteristics of the PDE intersecting. In an inviscid fluid ($\nu = 0$), this would result in a multi-valued, physically impossible solution (wave breaking). In our viscous model, the Laplacian smoothing kicks in just in time to create a steep, but continuous, "sawtooth" profile.
       </p>
       <p>
-        When we overlay the DeepONet's predictions onto this steepening curve, we can infer the expressive capacity of our model. The Trunk network, powered by multiple layers of matrix multiplications and Tanh activations, essentially acts as a set of adaptive Fourier-like basis functions. The network must linearly combine its 14 latent basis vectors (weighted by the Branch's 4 coefficients) to approximate this near-vertical cliff. The tight alignment between the predicted sawtooth and the numerical ground truth validates that our operator mapping has successfully internalized the delicate, continuous balance between convection and diffusion.
+        When we overlay the DeepONet's predictions onto this steepening curve, we can infer the expressive capacity of our model. The Trunk network—powered by multiple layers of matrix multiplications and Tanh activations—essentially acts as a set of adaptive Fourier-like basis functions. The tight alignment between the predicted sawtooth and the numerical ground truth validates that our operator mapping has successfully internalized the delicate, continuous balance between convection and diffusion.
       </p>
     </div>
   </div>
+</div>
 
-
-
-
- 
-
-  <h2>11. Next Steps: Moving to Spherical Geometries</h2>
+<!-- ───────────────── NEXT STEPS ───────────────── -->
+<div id="next" class="container section reveal">
+  <div class="section-label">Section 12</div>
+  <h2>Next Steps:<br>Moving to Spherical Geometries</h2>
 
   <p>
     Solving the 1+2D Burgers equation on a Euclidean grid is a powerful proof of concept for neural operators. But many real-world physical systems—like global weather patterns or plasma containment—do not exist on flat planes.
@@ -791,5 +1461,62 @@ Best test loss: 0.004739</code></pre>
     Our current research at the University of Manchester is expanding this architecture. We are replacing the standard Euclidean CNN branch with $SO(3)$-equivariant Spherical CNNs to solve intrinsic geometric PDEs, specifically the Laplace-Beltrami and Heat equations, directly on the surface of a two-sphere ($\mathbb{S}^2$).
   </p>
 
+  <div class="callout info">
+    <span class="callout-icon">🌐</span>
+    <div class="callout-body">
+      <strong>Ongoing Research · University of Manchester</strong>
+      <p>Replacing the Euclidean CNN branch with $SO(3)$-equivariant Spherical CNNs to solve the Laplace-Beltrami and Heat equations on $\mathbb{S}^2$ — enabling neural operators on curved manifolds.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────── FOOTER ───────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-badge">
+      <span>🏛</span> Research · IIT Kharagpur × University of Manchester
+    </div>
+    <p class="footer-text">
+      <a href="https://hamza-faarooq.github.io/" target="_blank">Muhammad Hamza</a> &amp; Ruhan Srivastava ·
+      Research under <strong style="color:var(--text)">Prof. Anirbit Mukherjee</strong>
+    </p>
+    <p class="footer-text" style="margin-top:12px;">
+      <a href="https://github.com/Vision-jarvis/DeepONet-Project/tree/main/Burger's%20PDE" target="_blank">View Source Code on GitHub →</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+  // ── Progress bar
+  const bar = document.getElementById('progress-bar');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+    bar.style.width = pct + '%';
+  });
+
+  // ── Top nav show after scroll
+  const nav = document.getElementById('top-nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('visible', window.scrollY > 300);
+  }, { passive: true });
+
+  // ── Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  reveals.forEach(el => io.observe(el));
+
+  // ── Copy code
+  function copyCode(btn) {
+    const pre = btn.closest('.code-wrapper').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+</script>
 </body>
 </html>
